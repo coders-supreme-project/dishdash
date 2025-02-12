@@ -1,7 +1,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
+// import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
 import restaurantOwnerRoutes from "./controllers/restaurentOwner"; // ✅ Corrected Import
 
 dotenv.config(); // ✅ Load environment variables
@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 
 // ✅ Middleware
 app.use(express.json());
-app.use(cookieParser()); // ✅ Needed for handling authentication tokens
+// app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 // ✅ Test Database Connection
 const testDB = async () => {
@@ -28,7 +28,7 @@ const testDB = async () => {
 testDB();
 
 // ✅ Routes
-app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
+// app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 
 // ✅ Start Server
 const PORT = process.env.PORT || 3001;
