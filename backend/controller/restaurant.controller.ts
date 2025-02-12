@@ -106,7 +106,6 @@ export const searchRestaurants = async (req: Request, res: Response) => {
         where: {
           name: {
             contains: name as string,
-            mode: 'insensitive',
           },
           menuItems: {
             some: {

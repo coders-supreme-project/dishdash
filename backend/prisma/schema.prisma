@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")  // ✅ Correct way to reference environment variables
 }
 
 model User {
@@ -88,12 +88,12 @@ model Driver {
 }
 
 model Order {
-  id              Int        @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
   customerId      Int
   restaurantId    Int
   driverId        Int?      
   totalAmount     Float
-  status          OrderStatus @default(pending)
+  status          OrderStatus   @default(pending)
   deliveryAddress String
   paymentStatus   PaymentStatus @default(pending)
 
@@ -102,7 +102,21 @@ model Order {
   restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
   driver          Driver?     @relation(fields: [driverId], references: [id])
   orderItems      OrderItem[]
+  payments        Payment[]   // ✅ Virtual relation (No need for `fields` and `references`)
 }
+
+
+model Payment {
+  id              Int            @id @default(autoincrement())
+  orderId         Int            // ✅ Removed @unique to allow multiple payments
+  paymentIntentId String         @unique
+  status          PaymentStatus   @default(pending)
+
+  // Relationships
+  order           Order           @relation(fields: [orderId], references: [id])
+}
+
+
 
 model OrderItem {
   id               Int      @id @default(autoincrement())
