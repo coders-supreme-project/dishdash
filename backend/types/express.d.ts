@@ -1,9 +1,11 @@
-import { User } from '@prisma/client'; // Import your User type from Prisma
+import { User } from "@prisma/client";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: User; // Add the user property to the Request interface
+      user?: User; // Extend Express Request type
     }
   }
 }
+
+export {}; // Ensure TypeScript treats this as a module
