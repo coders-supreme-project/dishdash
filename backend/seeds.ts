@@ -1,4 +1,4 @@
-import { PrismaClient, Role, OrderStatus, PaymentStatus, SenderType } from "@prisma/client";
+import { PrismaClient, Role, OrderStatus, PaymentStatus } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
@@ -190,7 +190,6 @@ console.log(`✅ Created ${categories.length} unique categories`);
         prisma.media.create({
           data: {
             imageUrl: faker.image.url(),
-            review: faker.lorem.sentence(),
             restaurantId: restaurant.id,
           },
         })
