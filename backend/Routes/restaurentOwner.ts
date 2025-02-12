@@ -1,21 +1,22 @@
 import express from "express";
-import restaurantController from "../controllers/restaurentOwner";
+import restaurantController from "../controllers/restaurentOwner"; // ✅ Check import spelling!
 
 const router = express.Router();
 
 // ✅ Restaurant Profile
-router.put("/update-profile",  restaurantController.updateProfile);
+router.put("/update-profile", restaurantController.updateProfile);
 
 // ✅ Restaurant Creation
-router.post("/create",  restaurantController.createRestaurant);
+//
+router.post("/create", restaurantController.createRestaurant);
 
 // ✅ Menu Items Management
-router.post("/menu-item",  restaurantController.createItem);
+router.post("/menu-item", restaurantController.createItem);
 router.put("/menu-item/:id", restaurantController.updateItem);
-router.delete("/menu-item/:id",  restaurantController.deleteItem);
+router.delete("/menu-item/:id", restaurantController.deleteItem);
 
 // ✅ Categories
-router.post("/category",  restaurantController.addCategory);
+router.post("/category", restaurantController.addCategory);
 router.get("/menu/:id", restaurantController.getAllItems);
 
 // ✅ Authentication & Logout

@@ -1,34 +1,36 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 // Initialize Prisma Client
 const prisma = new PrismaClient();
-
-// Define TypeScript interface for user authentication
-interface AuthenticatedRequest extends Request {
-  user?: { id: number }; // Ensure user exists in the request object
+function convertTo24HourFormat(time: string): string {
+  const [hours, minutes, period] = time.match(/(\d+):(\d+)(AM|PM)/i)?.slice(1) || [];
+  let hours24 = parseInt(hours, 10);
+  
+  if (period.toUpperCase() === "PM" && hours24 !== 12) {
+    hours24 += 12;
+  } else if (period.toUpperCase() === "AM" && hours24 === 12) {
+    hours24 = 0;
+  }
+  
+  return `${hours24.toString().padStart(2, "0")}:${minutes}:00`;
 }
+
 
 const restaurantController = {
   // ✅ Update Restaurant Profile
-  updateProfile: async (req: AuthenticatedRequest, res: Response):Promise<void>=> {
+  updateProfile: async (req: Request, res: Response): Promise<void> => {
     const { name, cuisineType, address, contactNumber, openingH, closingH, rating, firstName, lastName, email, password } = req.body;
 
     try {
-      if (!req.user) {
-         res.status(401).json({ message: "Unauthorized access" });
-         return
-      }
-
-      const userId = req.user.id;
+      const userId = Number(req.params.userId); // Assuming userId is passed as a parameter
 
       // Check if email is already taken
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser && existingUser.id !== userId) {
-         res.status(400).json({ message: "Email is already taken by another user." });
-         return
+        res.status(400).json({ message: "Email is already taken by another user." });
+        return;
       }
 
       // Update restaurant owner
@@ -66,24 +68,15 @@ const restaurantController = {
   },
 
   // ✅ Create Menu Item
-  createItem: async (req: AuthenticatedRequest, res: Response):Promise<void> => {
+  createItem: async (req: Request, res: Response): Promise<void> => {
     const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
 
     try {
-      if (!req.user) {
-         res.status(401).json({ message: "Unauthorized access" });
-         return
-      }
-
-      const restaurant = await prisma.restaurant.findFirst({ where: { restaurantOwnerId: req.user.id } });
-      if (!restaurant){
-          res.status(404).json({ message: "Restaurant not found" })
-            return
-         };
+      const restaurantId = Number(req.params.restaurantId); // Assuming restaurantId is passed as a parameter
 
       const newItem = await prisma.menuItem.create({
         data: {
-          restaurantId: restaurant.id,
+          restaurantId,
           name,
           description,
           price: Number(price),
@@ -101,7 +94,7 @@ const restaurantController = {
   },
 
   // ✅ Update Menu Item
-  updateItem: async (req: Request, res: Response):Promise<void> => {
+  updateItem: async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
 
@@ -165,44 +158,63 @@ const restaurantController = {
   },
 
   // ✅ Create Restaurant
-  createRestaurant: async (req: AuthenticatedRequest, res: Response):Promise<void> => {
-    const { firstName, lastName, name, cuisineType, address, contactNumber, openingH, closingH } = req.body;
-
+createRestaurant :async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-         res.status(401).json({ message: "Unauthorized access" });
+      const { firstName, lastName, name, cuisineType, address, contactNumber, openingH, closingH, userId } = req.body;
+      const userIdNumber = Number(userId); // Ensure userId is a number
+  
+      // 🔹 Validate `userId`
+      if (isNaN(userIdNumber)) {
+         res.status(400).json({ error: "Invalid userId" });
          return
       }
-
-      // Create the restaurant owner
-      const restOwner = await prisma.restaurantOwner.create({
-        data: { firstName, lastName, userId: req.user.id },
+  
+      // 🔹 Check if user exists
+      const existingUser = await prisma.user.findUnique({ where: { id: userIdNumber } });
+      if (!existingUser) {
+         res.status(404).json({ error: "User not found" });
+         return
+      }
+  
+      // 🔹 Check if the user already owns a restaurant
+      const existingOwner = await prisma.restaurantOwner.findUnique({
+        where: { userId: userIdNumber },
       });
-
-      // Create the restaurant
-      const newRestaurant = await prisma.restaurant.create({
+  
+      if (existingOwner) {
+         res.status(400).json({ error: "User already owns a restaurant" });
+         return
+      }
+  
+      // ✅ Create Restaurant Owner
+      const restOwner = await prisma.restaurantOwner.create({
+        data: { firstName, lastName, userId: userIdNumber },
+      });
+  
+      // ✅ Create Restaurant
+      const restaurant = await prisma.restaurant.create({
         data: {
           name,
           cuisineType,
           address,
           contactNumber,
-          openingH,
-          closingH,
+          openingH: new Date(`1970-01-01T${convertTo24HourFormat(openingH)}Z`), // ✅ Convert time
+          closingH: new Date(`1970-01-01T${convertTo24HourFormat(closingH)}Z`),
           restaurantOwnerId: restOwner.id,
         },
       });
-
-      res.status(200).json(newRestaurant);
+  
+      res.status(201).json('hello');
     } catch (err) {
-      console.error(err);
-      res.status(500).send("Failed to create restaurant");
+      console.error("Error creating restaurant:", err);
+      res.status(500).json({ error: "Failed to create restaurant" });
     }
   },
+  
 
-  // ✅ Log Out
+  // ✅ Log Out (No longer needed without authentication)
   logOutResto: (req: Request, res: Response) => {
-    res.clearCookie("token", { httpOnly: true, expires: new Date(0) });
-    res.send("Logged out successfully");
+    res.send("Log out functionality is not applicable without authentication.");
   },
 };
 
