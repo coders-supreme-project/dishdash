@@ -1,6 +1,6 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-
+import '@/styles/globals.css';
 export default function Home() {
   return (
     <div className={styles.page}>
@@ -13,6 +13,9 @@ export default function Home() {
           height={38}
           priority
         />
+        <button className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
+      Click Me
+    </button>
         <ol>
           <li>
             Get started by editing <code>app/page.tsx</code>.
