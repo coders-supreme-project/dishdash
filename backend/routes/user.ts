@@ -1,26 +1,34 @@
-import express, { Request, Response } from 'express';
-import { register, login } from '../controller/user'; // Import controller functions
-import  authMiddleware  from '../midlleware/authmiddleware'; // Protect routes with JWT middleware
-import { User } from '@prisma/client';
+import { Router } from 'express';
+import { 
+  register, 
+  login, 
+  getProfile, 
+  updateProfile 
+} from '../controller/user';
+import { authenticate, authorize } from '../midlleware/authmiddleware';
+import { prisma } from '../prisma';
 
-const router = express.Router();
+const router = Router();
 
-// Register Route
+// Auth routes
 router.post('/register', register);
-
-// Login Route
 router.post('/login', login);
 
-// Protected Route (Requires Authentication)
-router.get('/profile', authMiddleware, (req: Request, res: Response) => {
-  if (req.user) {
-    res.json({ user: req.user }); // User is attached to the request object after passing the authMiddleware
-    const user = req.user as User;
-  // res.json({ user });
+// Profile routes (protected)
+router.get('/profile', authenticate, getProfile);
+router.put('/profile', authenticate, updateProfile);
 
-  } else {
-    res.status(401).json({ message: 'Unauthorized' });
-  }
-});
+// Admin routes
+
+  router.get('/users', authenticate, authorize(['admin']), async (req, res, next) => {
+     try {
+       const users = await prisma.user.findMany({
+         include: { customer: true, restaurantOwner: true, driver: true }
+       });
+       res.json(users);
+     } catch (error) {
+       next(error); // Now 'next' is defined as a parameter.
+     }
+   });
 
 export default router;

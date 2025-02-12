@@ -3,9 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import cors from "cors";
 import authRoutes from "./routes/user";
 import dotenv from "dotenv";
+import helmet from 'helmet';
+import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
+import restaurantOwnerRoutes from "./controller/restaurentOwner"; // ✅ Corrected Import
 
-const prisma = new PrismaClient();
+dotenv.config(); // ✅ Load environment variables
+
 const app = express();
+app.use(helmet())
 app.use(cors());
 dotenv.config();
 app.use(express.json());
@@ -13,12 +18,38 @@ app.use("/api/auth", authRoutes);
 
 
 
+const prisma = new PrismaClient();
 
-app.get('/api/users', async (req, res) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+// ✅ Middleware
+app.use(express.json());
+app.use(cookieParser()); // ✅ Needed for handling authentication tokens
+
+// ✅ Test Database Connection
+const testDB = async () => {
+  try {
+    await prisma.$connect();
+    console.log("✅ Database connected successfully");
+  } catch (error) {
+    console.error("❌ Database connection failed:", error);
+    process.exit(1); // Exit process if DB fails
+  }
+};
+
+// ✅ Run Test on Server Start
+testDB();
+
+// ✅ Routes
+// app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
+
+// ✅ Start Server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-app.listen(5000, () => {
-  console.log('Backend server running on http://localhost:5000');
+// ✅ Ensure Prisma disconnects when server stops
+process.on("SIGINT", async () => {
+  await prisma.$disconnect();
+  console.log("🛑 Prisma disconnected");
+  process.exit();
 });

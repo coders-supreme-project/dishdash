@@ -1,27 +1,68 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { User } from "@prisma/client";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const prisma = new PrismaClient();
 
-const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1]; // Extract token
+interface AuthRequest extends Request {
+  user?: any;
+}
 
-  if (!token) {
-    res.status(401).json({ message: "No token provided" });
-    return;
-  }
-
+export const authenticate = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    // Decode token
-    const decoded = jwt.decode(token) as Partial<User>;
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
 
-    req.user = decoded as User; // ✅ TypeScript now recognizes req.user
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const user = await prisma.user.findUnique({
+      where: { id: (decoded as any).userId },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    req.user = user;
+    next(); // Pass control to the next middleware or route handler
   } catch (error) {
-    res.status(403).json({ message: "Invalid token" });
-    return;
+    next(error); // Pass the error to the error-handling middleware
   }
 };
 
-export default authMiddleware;
+export const authorize = (roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    next(); // Pass control to the next middleware or route handler
+  };
+};
+
+// src/middleware/error.middleware.ts
+export const errorHandler = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.error(err.stack);
+
+  if (err.name === 'PrismaClientKnownRequestError') {
+    return res.status(400).json({
+      message: 'Database error',
+      error: err.message,
+    });
+  }
+
+  res.status(500).json({
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+};
