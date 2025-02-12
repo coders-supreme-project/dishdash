@@ -1,10 +1,11 @@
 {
     "scripts": {
-  "start": "ts-node index.ts",
-  "build": "tsc",
-  "serve": "node dist/index.js"
-},
+        "start": "ts-node index.ts",
+        "build": "tsc",
+        "serve": "node dist/index.js"
+    },
     "dependencies": {
+        "@faker-js/faker": "^9.5.0",
         "@prisma/client": "^6.3.1",
         "body-parser": "^1.20.3",
         "cors": "^2.8.5",
