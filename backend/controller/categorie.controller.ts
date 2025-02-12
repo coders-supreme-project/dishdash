@@ -4,8 +4,11 @@ import { Request, Response } from 'express';
 const prisma = new PrismaClient();
 
 export const getCategoriesCustomer = async (req: Request, res: Response) => {
+  const { categoryId } = req.query;
   try {
-    const categories = await prisma.category.findMany();
+    const categories = await prisma.category.findMany({
+      where: categoryId ? { id: Number(categoryId) } : {},
+    });
     res.json(categories);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch categories' });

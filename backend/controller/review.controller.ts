@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { promises } from 'dns';
 
 const prisma = new PrismaClient();
 
@@ -40,7 +41,7 @@ export const getAllReviews = async (req: Request, res: Response) => {
 };
 
 // Get a review by ID
-export const getReviewById = async (req: Request, res: Response) => {
+export const getReviewById = async (req: Request, res: Response)=> {
   const { id } = req.params;
 
   try {
