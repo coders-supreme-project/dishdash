@@ -1,5 +1,5 @@
 import express from "express";
-import restaurantController from "../controllers/restaurentOwner"; // ✅ Check import spelling!
+import restaurantController from "../controller/restaurant.controller";
 
 const router = express.Router();
 
@@ -7,7 +7,6 @@ const router = express.Router();
 router.put("/update-profile", restaurantController.updateProfile);
 
 // ✅ Restaurant Creation
-//
 router.post("/create", restaurantController.createRestaurant);
 
 // ✅ Menu Items Management
@@ -15,11 +14,7 @@ router.post("/menu-item", restaurantController.createItem);
 router.put("/menu-item/:id", restaurantController.updateItem);
 router.delete("/menu-item/:id", restaurantController.deleteItem);
 
-// ✅ Categories
-router.post("/category", restaurantController.addCategory);
+// ✅ Retrieve Items
 router.get("/menu/:id", restaurantController.getAllItems);
-
-// ✅ Authentication & Logout
-router.post("/logout", restaurantController.logOutResto);
 
 export default router;
