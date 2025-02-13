@@ -1,16 +1,34 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";; // ✅ Add cookie-parser for authentication
-import restaurantOwnerRoutes from "./controllers/restaurentOwner"; // ✅ Corrected Import
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import categorieRoutes from './router/categorie.routes';
+import reviewRoutes from './router/review.routes';
+import restaurantRoutes from './router/restaurant.routes';
+
+
+import dotenv from "dotenv";
+import restaurantOwnerRoutes from "./controller/restaurentOwner.controller"; // ✅ Corrected Import
 
 dotenv.config(); // ✅ Load environment variables
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
 const prisma = new PrismaClient();
 
 // ✅ Middleware
-app.use(express.json()); // ✅ Needed for handling authentication tokens
+app.use(express.json());
 
+
+app.use('/api', categorieRoutes);
+app.use('/api', reviewRoutes);
+app.use('/api', restaurantRoutes);
+app.get('/api/users', async (req, res) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
+});
+
+app.listen(3300, () => {
+  console.log('Backend server running on http://localhost:3001');
+});
 // ✅ Test Database Connection
 const testDB = async () => {
   try {
@@ -24,12 +42,11 @@ const testDB = async () => {
 
 // ✅ Run Test on Server Start
 testDB();
-
+const PORT = process.env.PORT || 3001;
 // ✅ Routes
 // app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 
 // ✅ Start Server
-const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

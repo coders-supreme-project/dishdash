@@ -1,0 +1,155 @@
+/* Custom styles */
+.dashboard-btn {
+    background: #FFB800;
+    color: white;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: left;
+    width: 100%;
+    font-weight: 500;
+  }
+  
+  .nav-btn {
+    color: #64748B;
+    padding: 12px;
+    text-align: left;
+    width: 100%;
+    border-radius: 12px;
+    transition: all 0.2s;
+  }
+  
+  .nav-btn:hover {
+    background: #F8FAFC;
+  }
+  
+  .banner {
+    background: #FFB800;
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .banner::after {
+    content: '';
+    position: absolute;
+    right: -10%;
+    top: -50%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+  }
+  
+  .category-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.2s;
+    border: 1px solid #F1F5F9;
+  }
+  
+  .category-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .dish-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #F1F5F9;
+  }
+  
+  .dish-discount {
+    background: #EF4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.875rem;
+  }
+  
+  .dish-price {
+    color: #FFB800;
+    font-weight: 600;
+  }
+  
+  .add-btn {
+    background: #FFB800;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+  
+  .balance-card {
+    background: #FFB800;
+    border-radius: 16px;
+    padding: 16px;
+    color: white;
+  }
+  
+  .balance-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.875rem;
+  }
+  
+  .address-btn {
+    background: #F8FAFC;
+    color: #64748B;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+  }
+  
+  .coupon-btn {
+    background: #F8FAFC;
+    border-radius: 12px;
+    padding: 12px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .coupon-icon {
+    background: #FFB800;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  
+  .checkout-btn {
+    background: #FFB800;
+    color: white;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  
+  /* Utility classes */
+  .text-yellow {
+    color: #FFB800;
+  }
+  
+  .bg-yellow {
+    background: #FFB800;
+  }
