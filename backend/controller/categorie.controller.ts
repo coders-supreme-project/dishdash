@@ -1,13 +1,15 @@
 import { PrismaClient } from '@prisma/client';
+import { promises } from 'dns';
 import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
 
 export const getCategoriesCustomer = async (req: Request, res: Response) => {
-  const { categoryId } = req.query;
+  const { categoryId, limit } = req.query;
   try {
     const categories = await prisma.category.findMany({
       where: categoryId ? { id: Number(categoryId) } : {},
+      take: limit ? Number(limit) : undefined,
     });
     res.json(categories);
   } catch (error) {
@@ -66,5 +68,61 @@ export const deleteCategory = async (req: Request, res: Response) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete category' });
+  }
+};
+
+export const getMenuItems = async (req: Request, res: Response) => {
+  try {
+    const menuItems = await prisma.menuItem.findMany({
+      include: {
+        category: true, // Include category details if needed
+      },
+    });
+
+    res.json(menuItems);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch menu items' });
+  }
+};
+
+export const getMenuItemsByCategoryId = async (req: Request, res: Response):Promise<void>=> {
+  const { categoryId } = req.params;
+
+  try {
+    const menuItems = await prisma.menuItem.findMany({
+      where: {
+        categoryId: Number(categoryId),
+      },
+      include: {
+        restaurant: {
+          select: {
+            name: true,
+            image: true,
+            rating: true,
+          },
+        },
+      },
+      orderBy: {
+        restaurant: {
+          rating: 'desc',
+        },
+      },
+    });
+
+    if (!menuItems.length) {
+      res.status(404).json({ 
+   
+        message: 'No menu items found for this category' 
+      });
+      return 
+    }
+
+    res.json(menuItems);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch menu items',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
