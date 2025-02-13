@@ -7,9 +7,10 @@ import Link from 'next/link';
 import { useState, useEffect } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
-import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants } from "./services/api";
+import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants, createOrder, fetchOrders } from "./services/api";
 import { useRouter } from 'next/navigation';
-
+import { jwtDecode } from "jwt-decode";
+import { MenuItem, Order, OrderStatus } from './services/api';
 
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
@@ -33,13 +34,15 @@ const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877
 const DEFAULT_PROFILE = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop";
 
 // Add interface for cart item
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
+interface CartItem extends MenuItem {
   quantity: number;
-  image?: string;
-  restaurantId?: number;
+}
+
+// Add this interface near the top with other interfaces
+interface DecodedToken {
+  id: number;
+  email: string;
+  role: string;
 }
 
 export default function Home() {
@@ -64,6 +67,10 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [userBalance, setUserBalance] = useState(12000); // Replace static balance
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Move loadData inside the component and implement it
   const loadData = async () => {
@@ -91,6 +98,28 @@ export default function Home() {
     }
   };
 
+  const getUserIdFromToken = (): number => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return 0;
+      }
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('Decoded token:', decoded);
+      
+      return decoded.id;
+    
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      router.push('/login');
+      return 0;
+    }
+  };
+
+  const userId = getUserIdFromToken();
+  console.log('User ID:', userId);
+  
   // Update the initial useEffect to use the new loadData function
   useEffect(() => {
     loadData();
@@ -216,29 +245,78 @@ export default function Home() {
     setTotalAmount(itemsTotal + serviceCharge);
   }, [cart]);
 
-  // Add function to handle checkout
-  const handleCheckout = async () => {
-    if (totalAmount > userBalance) {
-      alert('Insufficient balance!');
-      return;
-    }
-
+  // Add this function to load orders
+  const loadOrders = async () => {
     try {
-      // Here you would normally make an API call to create the order
-      // await createOrder({ items: cart, totalAmount });
-      
-      // Update user balance
-      setUserBalance(prev => prev - totalAmount);
-      
-      // Clear cart after successful order
-      setCart([]);
-      
-      alert('Order placed successfully!');
+      setIsLoading(true);
+      const data = await fetchOrders();
+      setOrders(data);
     } catch (error) {
-      console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
+      console.error('Error loading orders:', error);
+      if (error.response?.status === 401) {
+        router.push('/login');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Update handleCheckout function
+  const handleCheckout = async () => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const userId = getUserIdFromToken();
+      if (!userId) {
+        router.push('/login');
+        return;
+      }
+
+      const restaurantId = cart[0]?.restaurantId;
+      if (!restaurantId) {
+        alert('Invalid restaurant ID');
+        return;
+      }
+
+      const orderData = {
+        items: cart.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalAmount,
+        customerId: userId,
+        restaurantId
+      };
+
+      const response = await createOrder(orderData);
+      
+      if (response.success) {
+        setCart([]);
+        await loadOrders(); // Reload orders after successful creation
+        alert('Order placed successfully!');
+        router.push('/food-order');
+      }
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      if (error.response?.status === 401) {
+        router.push('/login');
+      } else {
+        alert('Failed to place order. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Add this function to check token on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+    }
+  }, [router]);
 
   const handleNavClick = (navItem: string) => {
     setActiveNav(navItem);
@@ -625,9 +703,6 @@ export default function Home() {
               <div>Balance</div>
               <Wallet className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold mb-4">
-              ${userBalance.toLocaleString()}
-            </div>
             <div className="flex gap-2">
               <button className="balance-btn">
                 <CreditCard className="h-4 w-4" /> Top Up
@@ -703,11 +778,11 @@ export default function Home() {
             </button>
 
             <button 
-              className="checkout-btn"
+              className={`checkout-btn ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={handleCheckout}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isSubmitting}
             >
-              Checkout
+              {isSubmitting ? 'Processing...' : 'Checkout'}
             </button>
           </div>
         </div>

@@ -1,45 +1,33 @@
 import { PrismaClient, OrderStatus, PaymentStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import stripe from 'stripe';
+import { AuthenticatedRequest } from '../controller/user';  // Adjust path as needed
 
+const DEFAULT_FOOD_IMAGE = 'https://via.placeholder.com/150';
 const prisma = new PrismaClient();
 const stripeClient = new stripe("sk_test_51Qrf6mKss9UqsuwKVf6SUPhV3hYE8aQzD424YODs5hjU967eKmBvsVWS20V1A631ZGJoFdxNGrqBSx5RmMQHs06l00ExuwFj9a");
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { items, totalAmount, customerId, restaurantId, deliveryAddress } = req.body;
+    const { items, totalAmount, customerId, restaurantId } = req.body;
 
-    console.log('Received order data:', { items, totalAmount, customerId, restaurantId, deliveryAddress });
-
-    if (!items || !totalAmount || !customerId || !restaurantId || !deliveryAddress) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
-    }
-
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Items must be a non-empty array' });
       return;
     }
 
-    const invalidItems = items.filter(item => !item.id);
-    if (invalidItems.length > 0) {
-      res.status(400).json({ error: 'Some items are missing valid IDs' });
-      return;
-    }
-
+    // Create the order
     const order = await prisma.order.create({
       data: {
-        customerId, 
-        restaurantId,
-        totalAmount,
-        deliveryAddress,
-        status: OrderStatus.pending, // ✅ Using enum
-        paymentStatus: PaymentStatus.pending, // ✅ Using enum
+        customerId: Number(customerId),
+        restaurantId: Number(restaurantId),
+        totalAmount: Number(totalAmount),
+        status: OrderStatus.pending,
+        paymentStatus: PaymentStatus.pending,
       },
     });
 
-    console.log('Order created:', order);
-
+    // Create order items
     const orderItems = items.map(item => ({
       orderId: order.id,
       menuItemId: item.id,
@@ -62,15 +50,47 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const getOrders = async (req: Request, res: Response): Promise<void> => {
+export const getOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
     const orders = await prisma.order.findMany({
-      include: {
-        orderItems: true,
+      where: {
+        customerId: req.user.id
       },
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true
+          }
+        },
+        restaurant: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      } as const
     });
 
-    res.json(orders);
+    // Transform the data to match frontend structure
+    const transformedOrders = orders.map(order => ({
+      id: order.id,
+      items: order.orderItems.map(item => ({
+        id: item.id,
+        name: item.menuItem.name,
+        price: item.priceAtTimeOfOrder,
+        quantity: item.quantity,
+        image: item.menuItem.imageUrl || DEFAULT_FOOD_IMAGE
+      })),
+      totalAmount: order.totalAmount,
+      status: order.status.toLowerCase(),
+      date: order.createdAt.toISOString().split('T')[0],
+      restaurant: order.restaurant.name
+    }));
+
+    res.json(transformedOrders);
   } catch (error: any) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: error.message });
@@ -127,6 +147,41 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
     });
   } catch (error: any) {
     console.error('Error confirming payment:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const order = await prisma.order.update({
+      where: { id: Number(orderId) },
+      data: { status: status as OrderStatus }
+    });
+
+    res.json(order);
+  } catch (error: any) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteOrderItem = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId, itemId } = req.params;
+
+    await prisma.orderItem.delete({
+      where: {
+        id: Number(itemId),
+        orderId: Number(orderId)
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting order item:', error);
     res.status(500).json({ error: error.message });
   }
 };

@@ -41,14 +41,14 @@ export const searchRestaurants = async (params: {
   limit?: number;
 }) => {
   const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([_, value]) => value !== undefined && value !== '')
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
   );
   
   const response = await api.get('/restaurants/search', { 
     params: cleanParams
   });
   return response.data;
-  };
+};
 
 export const fetchMenuItemsByCategory = async (categoryId: number) => {
   try {
@@ -65,53 +65,99 @@ export const fetchRestaurantMenuByCategory = async (restaurantId: number) => {
   return response.data;
 };
 
-// Add new interfaces
+// Update or add these interfaces
+export interface MenuItem {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  restaurantId: number;
+}
+
 export interface OrderItem {
   id: number;
   name: string;
   price: number;
   quantity: number;
   image: string;
+  menuItemId: number;
 }
 
 export interface Order {
   id: number;
   items: OrderItem[];
   totalAmount: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: OrderStatus;
   date: string;
   restaurant: string;
   customerId: number;
 }
 
-// Add new API functions
+export enum OrderStatus {
+  pending = 'pending',
+  completed = 'completed',
+  cancelled = 'cancelled'
+}
+
+// Update the fetch orders function
 export const fetchOrders = async () => {
   try {
-    const response = await api.get('/orders');
+    const token = localStorage.getItem('token');
+    const response = await api.get<Order[]>('/orders', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error) {
     console.error('Error fetching orders:', error);
-    return [];
+    throw error;
   }
 };
 
-export const createOrder = async (orderData: Omit<Order, 'id' | 'date'>) => {
-  const response = await api.post('/orders', orderData);
+// Update create order function
+export const createOrder = async (orderData: {
+  items: Array<{ id: number; quantity: number; price: number }>;
+  totalAmount: number;
+  customerId: number;
+  restaurantId: number;
+}) => {
+  const token = localStorage.getItem('token');
+  const response = await api.post<{ success: boolean; order: Order }>('/orders', orderData, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   return response.data;
 };
 
 export const updateOrderStatus = async (orderId: number, status: Order['status']) => {
-  const response = await api.patch(`/api/orders/${orderId}/status`, { status });
+  const token = localStorage.getItem('token');
+  const response = await api.patch(`/orders/${orderId}/status`, { status }, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   return response.data;
 };
 
 export const deleteOrderItem = async (orderId: number, itemId: number) => {
-  const response = await api.delete(`/api/orders/${orderId}/items/${itemId}`);
+  const token = localStorage.getItem('token');
+  const response = await api.delete(`/orders/${orderId}/items/${itemId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   return response.data;
 };
 
 export const updateOrderItem = async (orderId: number, itemId: number, quantity: number) => {
-  const response = await api.patch(`/api/orders/${orderId}/items/${itemId}`, { quantity });
+  const token = localStorage.getItem('token');
+  const response = await api.patch(`/orders/${orderId}/items/${itemId}`, { quantity }, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
   return response.data;
 }; 
 

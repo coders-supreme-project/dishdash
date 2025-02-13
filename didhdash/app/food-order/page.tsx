@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Bell, ChevronRight, Search, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { fetchOrders, updateOrderStatus, deleteOrderItem, updateOrderItem } from "../services/api";
 import type { Order, OrderItem } from "../services/api";
+import { jwtDecode } from "jwt-decode";
 
 // Constants
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
@@ -16,7 +18,15 @@ interface NewOrder {
   restaurant: string;
 }
 
+interface DecodedToken {
+  id: number;
+  email: string;
+  role: string;
+}
+
 export default function FoodOrder() {
+
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
@@ -27,14 +37,20 @@ export default function FoodOrder() {
     price: 0,
     restaurant: ''
   });
+  const [error, setError] = useState<string | null>(null);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await fetchOrders();
       setOrders(data);
-    } catch (error) {
-      console.error('Error loading orders:', error);
+    } catch (error: any) {
+      setError(error.message || 'Failed to load orders');
+      // Redirect to login if unauthorized
+      if (error.response?.status === 401) {
+        router.push('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,11 +98,35 @@ export default function FoodOrder() {
     }
   };
 
+  const getUserIdFromToken = (): number => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return 0;
+      }
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('Decoded token:', decoded);
+      
+      return decoded.id;
+    
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      router.push('/login');
+      return 0;
+    }
+  };
+
   const handleAddOrder = () => {
     if (!newOrder.name || !newOrder.price || !newOrder.restaurant) {
       alert('Please fill in all fields');
       return;
     }
+
+    const userId = getUserIdFromToken();
+    console.log('User ID:', userId);
+    
+    if (!userId) return;
 
     const newOrderItem: Order = {
       id: orders.length + 1,
@@ -102,7 +142,8 @@ export default function FoodOrder() {
       totalAmount: newOrder.price,
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
-      restaurant: newOrder.restaurant
+      restaurant: newOrder.restaurant,
+      customerId: userId
     };
 
     setOrders(prev => [...prev, newOrderItem]);
