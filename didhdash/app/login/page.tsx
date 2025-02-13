@@ -12,7 +12,7 @@ const Login = () => {
   
   if (!authContext) {
     console.error("AuthContext is not available.");
-    return <p>Error: Authentication service is unavailable.</p>;
+    return <p></p>;
   }
 
   const { login } = authContext; // ✅ Destructure login function
@@ -48,6 +48,7 @@ const Login = () => {
           </Link>
         </p>
       </form>
+      
     </div>
   );
 };

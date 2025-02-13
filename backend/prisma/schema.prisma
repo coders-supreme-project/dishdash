@@ -40,15 +40,15 @@ model Customer {
 }
 
 model Restaurant {
-  id                Int      @id @default(autoincrement())
-  name              String
-  image             String?
-  address           String
-  cuisineType       String
-  contactNumber     String
-  openingH          DateTime
-  closingH          DateTime
-  rating            Float    @default(0)
+  id               Int       @id @default(autoincrement())
+  name             String    @db.VarChar(255)
+  image            String?   
+  address          String
+  cuisineType      String
+  contactNumber    String
+  openingH         DateTime
+  closingH         DateTime
+  rating           Float     @default(0)
   restaurantOwnerId Int
 
   // Relations
@@ -134,12 +134,12 @@ model OrderItem {
 model MenuItem {
   id           Int     @id @default(autoincrement())
   restaurantId Int
-  categoryId   Int?
-  name         String
-  description  String?
-  price        Float
-  imageUrl     String?
-  isAvailable  Boolean @default(true)
+  categoryId  Int?
+  name        String
+  description String?   
+  price       Decimal     @db.Decimal(10, 2)
+  imageUrl    String?   
+  isAvailable Boolean  @default(true)
 
   // Relationships
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
