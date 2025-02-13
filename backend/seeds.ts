@@ -8,7 +8,7 @@ async function main() {
 
   // ✅ Create Users
   const users = await Promise.all(
-    Array.from({ length: 10 }).map(async () =>
+    Array.from({ length: 30 }).map(async () =>
       prisma.user.create({
         data: {
           email: faker.internet.email(),
