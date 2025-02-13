@@ -9,8 +9,8 @@ import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentic
 import categorieRoutes from './router/categorie.routes';
 // import reviewRoutes from './router/review.routes';
 import restaurantRoutes from './router/restaurant.routes';
-
-
+import customerRoutes from './router/customer.routes';
+import googleRoutes from './router/google.routes';
 
 dotenv.config(); // ✅ Load environment variables
 
@@ -21,7 +21,7 @@ dotenv.config();
 app.use(express.json());
 app.use("/api/user", authRoutes);
 
-
+app.use('/api/auth', googleRoutes);
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
@@ -30,7 +30,7 @@ const prisma = new PrismaClient();
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
-app.use(cookieParser()); // ✅ Needed for handling authentication tokens
+// app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 
 app.use('/api', categorieRoutes);
