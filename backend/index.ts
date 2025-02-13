@@ -13,6 +13,7 @@ import restaurantRoutes from './router/restaurant.routes';
 import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
 import mediaRoutes from './router/media.controller';
+import googleRoutes from './router/google.routes';
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -24,7 +25,7 @@ dotenv.config();
 app.use(express.json());
 app.use("/api/user", authRoutes);
 
-
+app.use('/api/auth', googleRoutes);
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
