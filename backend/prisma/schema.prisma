@@ -88,7 +88,7 @@ model Driver {
 }
 
 model Order {
-  id              Int           @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
   customerId      Int
   restaurantId    Int
   driverId        Int?
@@ -98,11 +98,25 @@ model Order {
   paymentStatus   PaymentStatus @default(pending)
 
   // Relationships
-  customer   Customer    @relation(fields: [customerId], references: [id])
-  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
-  driver     Driver?     @relation(fields: [driverId], references: [id])
-  orderItems OrderItem[]
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  driver          Driver?     @relation(fields: [driverId], references: [id])
+  orderItems      OrderItem[]
+  payments        Payment[]   // ✅ Virtual relation (No need for `fields` and `references`)
 }
+
+
+model Payment {
+  id              Int            @id @default(autoincrement())
+  orderId         Int            // ✅ Removed @unique to allow multiple payments
+  paymentIntentId String         @unique
+  status          PaymentStatus   @default(pending)
+
+  // Relationships
+  order           Order           @relation(fields: [orderId], references: [id])
+}
+
+
 
 model OrderItem {
   id                 Int   @id @default(autoincrement())
@@ -160,21 +174,25 @@ model GeoLocation {
 }
 
 model Media {
-  id           Int     @id @default(autoincrement())
-  imageUrl     String?
-  review       String?
-  userId       Int?
-  restaurantId Int? // ✅ Make sure this field exists
-  driverId     Int?
-  customerId   Int?
-  orderItemId  Int?
+  id           Int      @id @default(autoincrement())
+  imageUrl     String? 
+  reviewText   String? 
+  rating       Float?  
+  createdAt    DateTime @default(now()) 
+
+ 
+  userId       Int?     
+  restaurantId Int?     
+  driverId     Int?     
+  customerId   Int?     
+  orderItemId  Int?    
 
   // Relationships
-  user       User?       @relation(fields: [userId], references: [id])
-  restaurant Restaurant? @relation(fields: [restaurantId], references: [id]) // ✅ This works
-  driver     Driver?     @relation(fields: [driverId], references: [id])
-  customer   Customer?   @relation(fields: [customerId], references: [id])
-  orderItem  OrderItem?  @relation(fields: [orderItemId], references: [id])
+  user         User?     @relation(fields: [userId], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  driver       Driver?   @relation(fields: [driverId], references: [id]) 
+  customer     Customer? @relation(fields: [customerId], references: [id]) 
+  orderItem    OrderItem? @relation(fields: [orderItemId], references: [id]) 
 }
 
 model Conversation {

@@ -1,154 +1,205 @@
-// src/controllers/user.controller.ts
+const bcrypt = require("bcryptjs");
+import jwt from "jsonwebtoken";
+import { PrismaClient, Role } from "@prisma/client";
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-
 const prisma = new PrismaClient();
 
-export const register = async (req: Request, res: Response) => {
+// Define the structure of the user object
+export interface UserPayload {
+  id: number;
+  email: string;
+  passwordHash: string;
+  role: Role;
+  phoneNumber: string | null;
+  createdAt: Date;
+  balance: number;
+  updatedAt: Date;
+}
+
+// Extend the Request type to include the user property
+export interface AuthenticatedRequest extends Request {
+  user?: UserPayload;
+}
+
+// Register a new user
+export const registerUser = async (req: Request, res: Response): Promise<void> => {
+  const { name, email, password, phoneNumber, address } = req.body;
+
+  // Validate required fields
+  if (!email || !password || !name) {
+    res.status(400).json({ error: "Name, email, and password are required." });
+    return;
+  }
+
   try {
-    const { email, password, role, phoneNumber, firstName, lastName } = req.body;
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+      res.status(400).json({ error: "User already exists." });
+      return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user with related Customer
     const user = await prisma.user.create({
       data: {
         email,
-        passwordHash,
-        role,
-        phoneNumber,
+        passwordHash: hashedPassword,
+        role: 'customer', // Default role for new users
+        phoneNumber: phoneNumber || null, // Optional field
+        customer: {
+          create: {
+            firstName: name,
+            lastName: '', // Optional field
+            deliveryAddress: address || '' // Optional field
+          }
+        }
       },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        phoneNumber: true,
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            deliveryAddress: true
+          }
+        },
+        createdAt: true
+      }
     });
 
-    // Create associated profile based on role
-    switch (role) {
-      case 'customer':
-        await prisma.customer.create({
-          data: {
-            firstName,
-            lastName,
-            deliveryAddress: req.body.deliveryAddress,
-            userId: user.id,
-          },
-        });
-        break;
-      case 'restaurantOwner':
-        await prisma.restaurantOwner.create({
-          data: {
-            firstName,
-            lastName,
-            userId: user.id,
-          },
-        });
-        break;
-      case 'driver':
-        await prisma.driver.create({
-          data: {
-            firstName,
-            lastName,
-            vehicleType: req.body.vehicleType,
-            licenseNumber: req.body.licenseNumber,
-            userId: user.id,
-          },
-        });
-        break;
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // Return user and token
     res.status(201).json({ user, token });
+
   } catch (error) {
-    res.status(500).json({ message: 'Registration failed', error });
+    console.error("Registration error:", error);
+    res.status(500).json({ 
+      error: "Registration failed", 
+      details: error instanceof Error ? error.message : String(error) 
+    });
   }
 };
 
-export const login = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
+// Login user
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
 
+  try {
+    // Find user with related Customer
     const user = await prisma.user.findUnique({
       where: { email },
-    });
-
-    if (!user || !await bcrypt.compare(password, user.passwordHash)) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);
-    res.json({ user, token });
-  } catch (error) {
-    res.status(500).json({ message: 'Login failed', error });
-  }
-};
-
-export const getProfile = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
-    
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        customer: true,
-        restaurantOwner: true,
-        driver: true,
-      },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        role: true,
+        phoneNumber: true,
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            deliveryAddress: true
+          }
+        },
+        createdAt: true
+      }
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ error: "User not found" });
+      return;
     }
 
-    res.json(user);
+    // Compare passwords
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      res.status(400).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    // Generate JWT token
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // Remove passwordHash from the response
+    const { passwordHash, ...userWithoutPassword } = user;
+
+    // Return user and token
+    res.status(200).json({
+      message: "Login successful",
+      user: userWithoutPassword,
+      token
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch profile', error });
+    console.error("Login error:", error);
+    res.status(500).json({
+      error: "Login failed",
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 
-export const updateProfile = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
-    const { email, phoneNumber, ...profileData } = req.body;
+// Get user profile
+export const getUserProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        email,
-        phoneNumber,
-      },
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        phoneNumber: true,
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            deliveryAddress: true
+          }
+        },
+        createdAt: true
+      }
     });
 
-    // Update role-specific profile
-    switch (user.role) {
-      case 'customer':
-        await prisma.customer.update({
-          where: { userId },
-          data: profileData,
-        });
-        break;
-      case 'restaurantOwner':
-        await prisma.restaurantOwner.update({
-          where: { userId },
-          data: profileData,
-        });
-        break;
-      case 'driver':
-        await prisma.driver.update({
-          where: { userId },
-          data: profileData,
-        });
-        break;
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
     }
 
-    res.json({ message: 'Profile updated successfully' });
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update profile', error });
+    console.error("Profile fetch error:", error);
+    res.status(500).json({
+      error: "Profile fetch error",
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 };

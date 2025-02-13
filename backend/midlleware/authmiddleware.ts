@@ -1,68 +1,25 @@
-import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { AuthenticatedRequest, UserPayload } from '../controller/user'; // Adjust the import path
+import { Response, NextFunction } from 'express';
+export const authenticateJWT = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
 
-const prisma = new PrismaClient();
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
 
-interface AuthRequest extends Request {
-  user?: any;
-}
-
-export const authenticate = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+    if (!process.env.JWT_SECRET) {
+      res.status(500).json({ error: "JWT_SECRET is not defined" });
+      return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    const user = await prisma.user.findUnique({
-      where: { id: (decoded as any).userId },
-    });
-
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-
-    req.user = user;
-    next(); // Pass control to the next middleware or route handler
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
+    req.user = decoded;
+    next();
   } catch (error) {
-    next(error); // Pass the error to the error-handling middleware
+    res.status(401).json({ error: "Invalid token" });
+    return;
   }
-};
-
-export const authorize = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Unauthorized' });
-    }
-    next(); // Pass control to the next middleware or route handler
-  };
-};
-
-// src/middleware/error.middleware.ts
-export const errorHandler = (
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  console.error(err.stack);
-
-  if (err.name === 'PrismaClientKnownRequestError') {
-    return res.status(400).json({
-      message: 'Database error',
-      error: err.message,
-    });
-  }
-
-  res.status(500).json({
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
 };

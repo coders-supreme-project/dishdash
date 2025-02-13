@@ -1,11 +1,24 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { User } from "@prisma/client";
+import { User, Role } from "@prisma/client";
 import jwt from "jsonwebtoken";
 
 // Initialize Prisma Client
 const prisma = new PrismaClient();
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    email: string;
+    passwordHash: string;
+    role: Role;
+    phoneNumber: string | null;
+    createdAt: Date;
+    balance: number;
+    updatedAt: Date;
+  };
+}
 
 // Define TypeScript interface for user authentication
 

@@ -1,11 +1,17 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from "cors";
-import authRoutes from "./routes/user";
+import authRoutes from "./router/user";
 import dotenv from "dotenv";
 import helmet from 'helmet';
 import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
 import restaurantOwnerRoutes from "./controller/restaurentOwner"; // ✅ Corrected Import
+import categorieRoutes from './router/categorie.routes';
+// import reviewRoutes from './router/review.routes';
+import restaurantRoutes from './router/restaurant.routes';
+
+
+
 
 dotenv.config(); // ✅ Load environment variables
 
@@ -14,9 +20,11 @@ app.use(helmet())
 app.use(cors());
 dotenv.config();
 app.use(express.json());
-app.use("/api/auth", authRoutes);
+app.use("/api/user", authRoutes);
 
 
+
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 const prisma = new PrismaClient();
 
@@ -24,6 +32,18 @@ const prisma = new PrismaClient();
 app.use(express.json());
 app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
+
+app.use('/api', categorieRoutes);
+// app.use('/api', reviewRoutes);
+app.use('/api', restaurantRoutes);
+// app.get('/api/users', async (req, res) => {
+//   const users = await prisma.user.findMany();
+//   res.json(users);
+// });
+
+app.listen(3000, () => {
+  console.log('Backend server running on http://localhost:3000');
+});
 // ✅ Test Database Connection
 const testDB = async () => {
   try {
