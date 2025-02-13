@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import axios from 'axios';
 import CustomerProfileForm from '@/components/CustomerProfileForm';
 import { CustomerProfile } from '@/types/customer';
 
@@ -10,17 +11,7 @@ export default function CustomerProfilePage() {
   const handleUpdateProfile = async (data: CustomerProfile) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/customer/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
+      const response = await axios.put('/api/customer/profile', data);
 
       // Handle success (e.g., show notification)
       alert('Profile updated successfully');

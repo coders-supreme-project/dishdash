@@ -500,7 +500,6 @@ export default function Home() {
               <div>Balance</div>
               <Wallet className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold mb-4">${formattedBalance}</div>
             <div className="flex gap-2">
               <button className="balance-btn">
                 <CreditCard className="h-4 w-4" /> Top Up
