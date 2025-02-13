@@ -4,8 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Utensils } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import {
   Form,
   FormControl,
@@ -13,11 +13,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../../components/ui/form";
 
 const formSchema = z.object({
-  position: z.string().min(1, "Position is required"),
-  applicationDate: z.string().min(1, "Application date is required"),
+  restaurantName: z.string().min(1, "Restaurant name is required"),
+  idCard: z.string().min(1, "ID card is required"),
+  rcDocument: z.string().min(1, "RC document is required"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   streetAddress: z.string().min(1, "Street address is required"),
@@ -31,8 +32,9 @@ export default function Home() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      position: "",
-      applicationDate: new Date().toISOString().split("T")[0],
+      restaurantName: "",
+      idCard: "",
+      rcDocument: "",
       firstName: "",
       lastName: "",
       streetAddress: "",
@@ -87,7 +89,7 @@ export default function Home() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900">
-              Restaurant Job Application Form
+              Restaurant Registration Form
             </h2>
             <p className="text-gray-600">Please complete the information below.</p>
           </div>
@@ -99,15 +101,15 @@ export default function Home() {
             >
               <FormField
                 control={form.control}
-                name="position"
+                name="restaurantName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
-                      Position Applied For <span className="text-red-500">*</span>
+                      Restaurant Name <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter position"
+                        placeholder="Enter restaurant name"
                         className="border-gray-300"
                         {...field}
                       />
@@ -119,15 +121,45 @@ export default function Home() {
 
               <FormField
                 control={form.control}
-                name="applicationDate"
-                render={({ field }) => (
+                name="idCard"
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
-                      Date of Application <span className="text-red-500">*</span>
+                      Owner ID Card <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="date"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          onChange(file ? file.name : "");
+                        }}
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rcDocument"
+                render={({ field: { value, onChange, ...field } }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Restaurant RC Document <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          onChange(file ? file.name : "");
+                        }}
                         className="border-gray-300"
                         {...field}
                       />

@@ -58,6 +58,20 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+export const getOrders = async (req: Request, res: Response) => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: {
+        orderItems: true,
+      },
+    });
+
+    res.json(orders);
+  } catch (error: any) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 export const confirmPayment = async (req: Request, res: Response) => {
   try {

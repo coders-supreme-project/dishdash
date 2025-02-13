@@ -7,7 +7,7 @@ export default function RestaurantOwner() {
   const router = useRouter();
 
   const handleAccept = () => {
-    router.push('/restaurentrequirement'); // Navigate directly on button click
+    router.push('/restaurentrequirement'); // This is correct
   };
 
   return (

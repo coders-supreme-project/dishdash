@@ -7,6 +7,7 @@ import restaurantRoutes from './router/restaurant.routes';
 
 import dotenv from "dotenv";
 import restaurantOwnerRoutes from "./controller/restaurentOwner.controller"; // ✅ Corrected Import
+import cors from 'cors';
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -15,6 +16,7 @@ const app = express();
 const prisma = new PrismaClient();
 
 // ✅ Middleware
+app.use(cors());
 app.use(express.json());
 
 
@@ -27,7 +29,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.listen(3300, () => {
-  console.log('Backend server running on http://localhost:3001');
+  console.log('Backend server running on http://localhost:5000');
 });
 // ✅ Test Database Connection
 const testDB = async () => {
