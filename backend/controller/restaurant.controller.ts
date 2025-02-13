@@ -144,8 +144,8 @@ export const searchRestaurants = async (req: Request, res: Response) => {
     const filteredRestaurants = minPrice || maxPrice
       ? restaurants.filter(restaurant => 
           restaurant.menuItems.some(item => 
-            (!minPrice || item.price >= Number(minPrice)) &&
-            (!maxPrice || item.price <= Number(maxPrice))
+            (!minPrice || Number(item.price) >= Number(minPrice)) &&
+            (!maxPrice || Number(item.price) <= Number(maxPrice))
           )
         )
       : restaurants;
