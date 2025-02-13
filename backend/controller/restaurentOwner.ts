@@ -1,12 +1,12 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import { User, Role } from "@prisma/client";
 import jwt from "jsonwebtoken";
 
 // Initialize Prisma Client
 const prisma = new PrismaClient();
 
-// Define TypeScript interface for user authentication
 interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
@@ -19,6 +19,8 @@ interface AuthenticatedRequest extends Request {
     updatedAt: Date;
   };
 }
+
+// Define TypeScript interface for user authentication
 
 const restaurantController = {
   // ✅ Update Restaurant Profile
