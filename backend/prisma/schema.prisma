@@ -41,7 +41,7 @@ model Customer {
 
 model Restaurant {
   id               Int       @id @default(autoincrement())
-  name             String
+  name             String    @db.VarChar(255)
   image            String?   
   address          String
   cuisineType      String
@@ -137,7 +137,7 @@ model MenuItem {
   categoryId  Int?
   name        String
   description String?   
-  price       Float
+  price       Decimal     @db.Decimal(10, 2)
   imageUrl    String?   
   isAvailable Boolean  @default(true)
 
