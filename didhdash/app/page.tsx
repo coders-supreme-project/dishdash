@@ -241,6 +241,7 @@ export default function Home() {
                 <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
                   Register
                 </Link>
+                <Career/>
               </div>
             </div>
           </div>

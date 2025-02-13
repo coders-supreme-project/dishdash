@@ -12,7 +12,7 @@ import restaurantRoutes from './router/restaurant.routes';
 
 import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
-
+import mediaRoutes from './router/media.controller';
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -38,7 +38,7 @@ app.use(express.json());
 
 app.use('/api', categorieRoutes);
 app.use('/api/driver', driverRoutes);
-
+app.use('/api/media', mediaRoutes);
 // app.use('/api', reviewRoutes);
 app.use('/api', restaurantRoutes);
 // app.get('/api/users', async (req, res) => {

@@ -2,7 +2,14 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import "@/styles/globals.css";
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+import Cookies from 'js-cookie';
+
 interface FormData {
+  firstName: string;
+  lastName: string;
   licenseNumber: string;
   issuingCountry: string;
   licenseCategory: string;
@@ -15,8 +22,16 @@ interface FormData {
   insuranceProof: File | null;
 }
 
+interface DecodedToken {
+  userId: number;
+  // add other token fields if needed
+}
+
 export default function DriverInfoForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
+    firstName: "",
+    lastName: "",
     licenseNumber: "",
     issuingCountry: "",
     licenseCategory: "",
@@ -46,13 +61,63 @@ export default function DriverInfoForm() {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
+    console.log("salem");
+    
     e.preventDefault();
-    console.log(formData); // Handle form submission here
+    
+    try {
+      // Get token from cookies
+      const token = Cookies.get('auth_token');
+      console.log(token,"token");
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+    
+      // Decode token to get userId
+      const decoded = jwtDecode<DecodedToken>(token);
+      
+      // First, register the driver with userId
+      const driverResponse = await axios.post('/api/driver/register', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        vehicleType: formData.vehicleType,
+        licenseNumber: formData.licenseNumber,
+        userId: decoded.userId // Add userId from token
+      }, {
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Handle media upload
+      if (formData.insuranceProof) {
+        const formDataMedia = new FormData();
+        formDataMedia.append('file', formData.insuranceProof);
+        formDataMedia.append('driverId', driverResponse.data.driver.id);
+
+        await axios.post('/api/media/create', formDataMedia, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
+          withCredentials: true
+        });
+      }
+
+      console.log('Registration successful');
+      router.push('/dashboard');
+      
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Registration failed:', error.response?.data?.message || error.message);
+      }
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={(e) => handleSubmit(e)} className="space-y-6">
       {/* Driver's License Details */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-800">Driver's License Details</h2>
