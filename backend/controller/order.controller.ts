@@ -5,28 +5,31 @@ import stripe from 'stripe';
 const prisma = new PrismaClient();
 const stripeClient = new stripe("sk_test_51Qrf6mKss9UqsuwKVf6SUPhV3hYE8aQzD424YODs5hjU967eKmBvsVWS20V1A631ZGJoFdxNGrqBSx5RmMQHs06l00ExuwFj9a");
 
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
     const { items, totalAmount, customerId, restaurantId, deliveryAddress } = req.body;
 
     console.log('Received order data:', { items, totalAmount, customerId, restaurantId, deliveryAddress });
 
     if (!items || !totalAmount || !customerId || !restaurantId || !deliveryAddress) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Items must be a non-empty array' });
+      res.status(400).json({ error: 'Items must be a non-empty array' });
+      return;
     }
 
     const invalidItems = items.filter(item => !item.id);
     if (invalidItems.length > 0) {
-      return res.status(400).json({ error: 'Some items are missing valid IDs' });
+      res.status(400).json({ error: 'Some items are missing valid IDs' });
+      return;
     }
 
     const order = await prisma.order.create({
       data: {
-        customerId,
+        customerId, 
         restaurantId,
         totalAmount,
         deliveryAddress,
@@ -58,7 +61,8 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
-export const getOrders = async (req: Request, res: Response) => {
+
+export const getOrders = async (req: Request, res: Response): Promise<void> => {
   try {
     const orders = await prisma.order.findMany({
       include: {
@@ -71,22 +75,24 @@ export const getOrders = async (req: Request, res: Response) => {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: error.message });
   }
-}
+};
 
-export const confirmPayment = async (req: Request, res: Response) => {
+export const confirmPayment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { paymentIntentId } = req.body;
 
     console.log('Confirming payment for intent:', paymentIntentId);
 
     if (!paymentIntentId) {
-      return res.status(400).json({ error: 'Missing paymentIntentId' });
+      res.status(400).json({ error: 'Missing paymentIntentId' });
+      return;
     }
 
     const paymentIntent = await stripeClient.paymentIntents.retrieve(paymentIntentId);
 
     if (!paymentIntent.metadata?.orderId) {
-      return res.status(400).json({ error: 'Missing orderId in payment metadata' });
+      res.status(400).json({ error: 'Missing orderId in payment metadata' });
+      return;
     }
 
     const orderId = Number(paymentIntent.metadata.orderId);
@@ -98,7 +104,8 @@ export const confirmPayment = async (req: Request, res: Response) => {
     });
 
     if (!existingOrder) {
-      return res.status(404).json({ error: 'Order not found' });
+      res.status(404).json({ error: 'Order not found' });
+      return;
     }
 
     const [payment, order] = await Promise.all([
