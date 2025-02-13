@@ -5,7 +5,6 @@ import "@/styles/globals.css";
 interface FormData {
   licenseNumber: string;
   issuingCountry: string;
-  expiryDate: string;
   licenseCategory: string;
   vehicleMakeModelYear: string;
   vehicleRegistrationNumber: string;
@@ -20,7 +19,6 @@ export default function DriverInfoForm() {
   const [formData, setFormData] = useState<FormData>({
     licenseNumber: "",
     issuingCountry: "",
-    expiryDate: "",
     licenseCategory: "",
     vehicleMakeModelYear: "",
     vehicleRegistrationNumber: "",
@@ -57,7 +55,7 @@ export default function DriverInfoForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Driver's License Details */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800">Driver’s License Details</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Driver's License Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700">License Number</label>
@@ -78,18 +76,6 @@ export default function DriverInfoForm() {
               id="issuingCountry"
               name="issuingCountry"
               value={formData.issuingCountry}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">Expiry Date</label>
-            <input
-              type="date"
-              id="expiryDate"
-              name="expiryDate"
-              value={formData.expiryDate}
               onChange={handleChange}
               className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
