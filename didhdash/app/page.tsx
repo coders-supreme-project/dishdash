@@ -71,6 +71,13 @@ const orderMenu = [
 export default function Home() {
   const [balance] = useState(12000);
   
+  // Format the balance consistently using toLocaleString with specific options
+  const formattedBalance = balance.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    useGrouping: true,
+  });
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto p-4 flex gap-4">
@@ -265,7 +272,7 @@ export default function Home() {
               <div>Balance</div>
               <Wallet className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold mb-4">${balance.toLocaleString()}</div>
+            <div className="text-2xl font-bold mb-4">${formattedBalance}</div>
             <div className="flex gap-2">
               <button className="balance-btn">
                 <CreditCard className="h-4 w-4" /> Top Up

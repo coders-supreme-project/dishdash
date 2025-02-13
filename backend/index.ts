@@ -6,7 +6,6 @@ import restaurantRoutes from './router/restaurant.routes';
 
 
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser"; 
 import restaurantOwnerRoutes from "./controller/restaurentOwner.controller"; // ✅ Corrected Import
 
 dotenv.config(); // ✅ Load environment variables
