@@ -30,7 +30,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.listen(3300, () => {
-  console.log('Backend server running on http://localhost:3001');
+  console.log('Backend server running on http://localhost:5000');
 });
 // ✅ Test Database Connection
 const testDB = async () => {
@@ -50,7 +50,7 @@ testDB();
 // app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 
 // ✅ Start Server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

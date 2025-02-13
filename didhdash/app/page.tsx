@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
-import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory } from "./services/api";
+import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants } from "./services/api";
 
 
 const orderMenu = [
@@ -44,32 +44,38 @@ export default function Home() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [restaurantMenu, setRestaurantMenu] = useState<any>({});
   const [isLoadingMenu, setIsLoadingMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [isSearching, setIsSearching] = useState(false);
 
+  // Move loadData inside the component and implement it
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [categoriesData, restaurantsData] = await Promise.all([
+        fetchCategories(),
+        fetchRestaurants()
+      ]);
+      
+      setCategories(categoriesData);
+      setRestaurants(restaurantsData);
+      // For recent orders, we'll use the first 3 restaurants as an example
+      setRecentOrders(restaurantsData.slice(0, 3).map((restaurant: any) => ({
+        name: restaurant.name,
+        image: restaurant.image,
+        price: restaurant.menuItems?.[0]?.price || 0,
+        distance: "2 miles", // You might want to calculate this based on user location
+        time: "30 mins"
+      })));
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update the initial useEffect to use the new loadData function
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [categoriesData, restaurantsData] = await Promise.all([
-          fetchCategories(),
-          fetchRestaurants()
-        ]);
-        
-        setCategories(categoriesData);
-        setRestaurants(restaurantsData);
-        // For recent orders, we'll use the first 3 restaurants as an example
-        setRecentOrders(restaurantsData.slice(0, 3).map((restaurant: any) => ({
-          name: restaurant.name,
-          image: restaurant.image,
-          price: restaurant.menuItems?.[0]?.price || 0,
-          distance: "2 miles", // You might want to calculate this based on user location
-          time: "30 mins"
-        })));
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
@@ -79,10 +85,18 @@ export default function Home() {
       setIsLoadingMenuItems(true);
       setSelectedCategory(categoryId);
       const items = await fetchMenuItemsByCategory(categoryId);
-      setMenuItems(items);
+      
+      if (Array.isArray(items)) {
+        setMenuItems(items);
+      } else {
+        setMenuItems([]);
+        console.error('Invalid menu items data received');
+      }
+      
       setViewAllRestaurants(false); // Reset restaurant view
     } catch (error) {
       console.error('Error fetching menu items:', error);
+      setMenuItems([]);
     } finally {
       setIsLoadingMenuItems(false);
     }
@@ -101,6 +115,39 @@ export default function Home() {
       setIsLoadingMenu(false);
     }
   };
+
+  // Add search function
+  const handleSearch = async () => {
+    try {
+      setIsSearching(true);
+      const results = await searchRestaurants({
+        name: searchQuery,
+        minPrice: priceRange.min ? Number(priceRange.min) : undefined,
+        maxPrice: priceRange.max ? Number(priceRange.max) : undefined
+      });
+      setRestaurants(results);
+      setSelectedCategory(null);
+      setSelectedRestaurant(null);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Add debounced search effect
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery || priceRange.min || priceRange.max) {
+        handleSearch();
+      } else {
+        // Reset to original data if search is cleared
+        loadData();
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, priceRange.min, priceRange.max]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -149,13 +196,37 @@ export default function Home() {
               <h1 className="text-2xl font-semibold">Hello, Patricia</h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4"   />
-                <input
-                  type="text"
-                  placeholder="What do you want eat today..."
-                  className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 w-[300px]"
-                />
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search restaurants..."
+                    className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 w-[300px]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                    placeholder="Min $"
+                    className="w-20 px-3 py-2 rounded-xl border border-gray-200"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                    type="number"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                    placeholder="Max $"
+                    className="w-20 px-3 py-2 rounded-xl border border-gray-200"
+                  />
+                </div>
+                {isSearching && (
+                  <div className="animate-spin h-4 w-4 border-2 border-yellow border-t-transparent rounded-full" />
+                )}
               </div>
               <button className="p-2 hover:bg-gray-100 rounded-xl">
                 <Bell className="h-5 w-5 text-gray-600" />
@@ -224,32 +295,43 @@ export default function Home() {
                   <div className="animate-spin h-8 w-8 border-2 border-yellow border-t-transparent rounded-full"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-6">
-                  {menuItems.map((item) => (
-                    <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
-                      <div className="relative h-48">
-                        <Image
-                          src={item.imageUrl || DEFAULT_FOOD_IMAGE}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold mb-2">{item.name}</h3>
-                        {item.description && (
-                          <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-yellow">${item.price}</div>
-                          <button className="add-btn">
-                            +
-                          </button>
+                menuItems.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-6">
+                    {menuItems.map((item) => (
+                      <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                        <div className="relative h-48">
+                          <Image
+                            src={item.imageUrl || DEFAULT_FOOD_IMAGE}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold mb-2">{item.name}</h3>
+                          {item.description && (
+                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-yellow">
+                              ${Number(item.price).toFixed(2)}
+                            </div>
+                            <button className="add-btn">+</button>
+                          </div>
+                          {item.restaurant && (
+                            <div className="text-sm text-gray-500 mt-2">
+                              {item.restaurant.name}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No menu items found for this category
+                  </div>
+                )
               )}
             </div>
           )}

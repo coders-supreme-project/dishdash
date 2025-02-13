@@ -106,33 +106,56 @@ export const deleteRestaurant = async (req: Request, res: Response) => {
 };
 
 export const searchRestaurants = async (req: Request, res: Response) => {
-    const { name, minPrice, maxPrice } = req.query;
-    try {
-      const restaurants = await prisma.restaurant.findMany({
-        where: {
-          name: {
-            contains: name as string,
-          },
-          menuItems: {
-            some: {
-              price: {
-                gte: Number(minPrice),
-                lte: Number(maxPrice),
+  const { name, minPrice, maxPrice } = req.query;
+  try {
+    const restaurants = await prisma.restaurant.findMany({
+      where: {
+        AND: [
+          name ? {
+            name: {
+              contains: name as string,
+              // Case-insensitive search
+            }
+          } : {},
+          minPrice || maxPrice ? {
+            menuItems: {
+              some: {
+                price: {
+                  ...(minPrice ? { gte: Number(minPrice) } : {}),
+                  ...(maxPrice ? { lte: Number(maxPrice) } : {}),
+                },
               },
             },
+          } : {},
+        ],
+      },
+      include: {
+        menuItems: {
+          include: {
+            category: true,
           },
         },
-        include: {
-          menuItems: true,
-          geoLocation: true,
-          media: true,
-        },
-      });
-      res.status(200).json(restaurants);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to search restaurants' });
-    }
-  };
+        geoLocation: true,
+        media: true,
+      },
+    });
+
+    // If searching by price range, filter restaurants that have at least one menu item in range
+    const filteredRestaurants = minPrice || maxPrice
+      ? restaurants.filter(restaurant => 
+          restaurant.menuItems.some(item => 
+            (!minPrice || item.price >= Number(minPrice)) &&
+            (!maxPrice || item.price <= Number(maxPrice))
+          )
+        )
+      : restaurants;
+
+    res.status(200).json(filteredRestaurants);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Failed to search restaurants' });
+  }
+};
 
 export const getRestaurantMenuByCategory = async (req: Request, res: Response) => {
   const { restaurantId } = req.params;

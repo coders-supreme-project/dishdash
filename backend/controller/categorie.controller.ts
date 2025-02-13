@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { promises } from 'dns';
 import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
@@ -70,9 +71,6 @@ export const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
 export const getMenuItems = async (req: Request, res: Response) => {
   try {
     const menuItems = await prisma.menuItem.findMany({
@@ -87,21 +85,44 @@ export const getMenuItems = async (req: Request, res: Response) => {
   }
 };
 
-export const getMenuItemsByCategoryId = async (req: Request, res: Response) => {
+export const getMenuItemsByCategoryId = async (req: Request, res: Response):Promise<void>=> {
   const { categoryId } = req.params;
 
   try {
     const menuItems = await prisma.menuItem.findMany({
       where: {
-        categoryId: Number(categoryId), // Filter by categoryId
+        categoryId: Number(categoryId),
       },
       include: {
-        category: true, // Include category details if needed
+        restaurant: {
+          select: {
+            name: true,
+            image: true,
+            rating: true,
+          },
+        },
+      },
+      orderBy: {
+        restaurant: {
+          rating: 'desc',
+        },
       },
     });
 
+    if (!menuItems.length) {
+      res.status(404).json({ 
+   
+        message: 'No menu items found for this category' 
+      });
+      return 
+    }
+
     res.json(menuItems);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch menu items' });
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch menu items',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
