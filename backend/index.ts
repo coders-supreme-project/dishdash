@@ -10,7 +10,7 @@ import categorieRoutes from './router/categorie.routes';
 // import reviewRoutes from './router/review.routes';
 import restaurantRoutes from './router/restaurant.routes';
 
-
+import driverRoutes from './router/driverRoutes';
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -34,6 +34,8 @@ app.use(express.json());
 
 
 app.use('/api', categorieRoutes);
+app.use('/api/driver', driverRoutes);
+
 // app.use('/api', reviewRoutes);
 app.use('/api', restaurantRoutes);
 // app.get('/api/users', async (req, res) => {
