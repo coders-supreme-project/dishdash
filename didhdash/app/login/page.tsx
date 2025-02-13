@@ -1,4 +1,3 @@
-// /app/login/page.tsx
 'use client';
 
 import { useState, useContext } from 'react';
@@ -8,14 +7,14 @@ import Link from 'next/link';
 
 const Login = () => {
   const router = useRouter();
-  const authContext = useContext(AuthContext); // ✅ Get AuthContext at the top
-  
+  const authContext = useContext(AuthContext);
+
   if (!authContext) {
     console.error("AuthContext is not available.");
-    return <p></p>;
+    return <p>Error: Authentication service is unavailable.</p>;
   }
 
-  const { login } = authContext; // ✅ Destructure login function
+  const { login } = authContext;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,28 +26,50 @@ const Login = () => {
 
     try {
       await login(email, password);
-      router.push('/'); // Redirect after login
+      router.push('/'); // Redirect only on successful login
     } catch (err) {
-      setError('Invalid email or password');
+      console.error("Login failed:", err);
+      setError('Invalid email or password'); // Show error message
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <form onSubmit={handleSubmit} className="bg-white p-6 shadow-md rounded-md w-96">
-        <h2 className="text-2xl font-bold mb-4">Login</h2>
-        {error && <p className="text-red-500">{error}</p>}
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border rounded mb-2" required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded mb-2" required />
-        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">Login</button>
-        <p className="mt-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <form onSubmit={handleSubmit} className="bg-white p-6 shadow-lg rounded-lg w-96">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Login</h2>
+
+        {error && <p className="text-red-600 text-sm text-center mb-4">{error}</p>}
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 border rounded mb-3 focus:outline-none focus:border-blue-500"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 border rounded mb-3 focus:outline-none focus:border-blue-500"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+        >
+          Login
+        </button>
+
+        <p className="mt-4 text-sm text-gray-600 text-center">
           Don't have an account?{' '}
-          <Link href="/register" className="text-blue-500">
+          <Link href="/register" className="text-blue-600 font-semibold hover:underline">
             Register
           </Link>
         </p>
       </form>
-      
     </div>
   );
 };
