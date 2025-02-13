@@ -6,13 +6,10 @@ const nextConfig = {
     domains: [
       "images.unsplash.com",
       "loremflickr.com",
-      "picsum.photos"  // Add this domain
+      "picsum.photos"  // Ensure this domain is correctly included
     ],
   },
   i18n, // ✅ Ensure i18n is properly included
 };
 
-export default nextConfig; // ✅ Use ES module export if your project supports it
-
-// OR, if using CommonJS:
-module.exports = nextConfig;
+export default nextConfig;  // ✅ ES module export (works with Next.js TypeScript support)

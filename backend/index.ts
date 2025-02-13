@@ -11,6 +11,8 @@ import categorieRoutes from './router/categorie.routes';
 import restaurantRoutes from './router/restaurant.routes';
 
 import driverRoutes from './router/driverRoutes';
+import customerRoutes from './router/customer.routes';
+
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -31,6 +33,7 @@ const prisma = new PrismaClient();
 // ✅ Middleware
 app.use(cors());
 app.use(express.json());
+// app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 
 app.use('/api', categorieRoutes);
