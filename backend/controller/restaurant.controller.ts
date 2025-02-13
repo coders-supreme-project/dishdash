@@ -27,10 +27,16 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 // Get all restaurants
 export const getAllRestaurants = async (req: Request, res: Response) => {
+  const { limit } = req.query;
   try {
     const restaurants = await prisma.restaurant.findMany({
+      take: limit ? Number(limit) : undefined,
       include: {
-        menuItems: true,
+        menuItems: {
+          include: {
+            category: true,
+          }
+        },
         geoLocation: true,
         media: true,
       },
@@ -127,3 +133,34 @@ export const searchRestaurants = async (req: Request, res: Response) => {
       res.status(500).json({ error: 'Failed to search restaurants' });
     }
   };
+
+export const getRestaurantMenuByCategory = async (req: Request, res: Response) => {
+  const { restaurantId } = req.params;
+  try {
+    const menuItems = await prisma.menuItem.findMany({
+      where: {
+        restaurantId: Number(restaurantId),
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    // Group menu items by category
+    const menuByCategory = menuItems.reduce((acc: any, item) => {
+      const categoryId = item.categoryId ?? 'uncategorized';
+      if (!acc[categoryId]) {
+        acc[categoryId] = {
+          categoryName: item.category?.name || 'Uncategorized',
+          items: []
+        };
+      }
+      acc[categoryId].items.push(item);
+      return acc;
+    }, {});
+
+    res.status(200).json(menuByCategory);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch restaurant menu' });
+  }
+};

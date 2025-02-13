@@ -8,6 +8,7 @@ import restaurantRoutes from './router/restaurant.routes';
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser"; 
 import restaurantOwnerRoutes from "./controller/restaurentOwner.controller"; // ✅ Corrected Import
+import cors from 'cors';
 
 dotenv.config(); // ✅ Load environment variables
 
@@ -15,6 +16,7 @@ const app = express();
 const prisma = new PrismaClient();
 
 // ✅ Middleware
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
