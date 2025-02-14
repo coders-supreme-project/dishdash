@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {jwtDecode} from 'jwt-decode';
 import Swal from 'sweetalert2';
+import { log } from "console";
 
 interface FormData {
   firstName: string;
@@ -69,14 +70,14 @@ export default function DriverInfoForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
+    console.log('Form data:', formData ,"user",user);
     try {
       // Register the driver
       const driverResponse = await axios.post(
         'http://localhost:3000/api/driver/register',
         {
-          firstName: user.firstName || "saka",
-          lastName: user.lastName || "last",
+          firstName: user.customer.firstName || "saka",
+          lastName: user.customer.lastName || "last",
           vehicleType: formData.vehicleType,
           licenseNumber: formData.licenseNumber,
           userId: userId, // Include the user ID from the decoded token
@@ -90,7 +91,7 @@ export default function DriverInfoForm() {
         const formDataMedia = new FormData();
         formDataMedia.append('file', formData.insuranceProof);
         formDataMedia.append('driverId', driverResponse.data.driver.id);
-
+        console.log(formDataMedia," mediaa form");
         await axios.post('http://localhost:3000/api/media/create', formDataMedia);
       }
 
@@ -127,8 +128,7 @@ export default function DriverInfoForm() {
               type="text"
               id="firstName"
               name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
+              value={user.customer.firstName}
               className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -139,8 +139,7 @@ export default function DriverInfoForm() {
               type="text"
               id="lastName"
               name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
+              value={user.customer.lastName}
               className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

@@ -3,7 +3,7 @@ import {createMedia,getMedia} from '../controller/media.controller';
 
 const router = Router();
 
-router.post('/media', createMedia);
+router.post('/create', createMedia);
 router.get('/media', getMedia);
 
 

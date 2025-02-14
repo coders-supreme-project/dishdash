@@ -4,7 +4,6 @@ import cors from "cors";
 import authRoutes from "./router/user";
 import dotenv from "dotenv";
 import helmet from 'helmet';
-import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
 // import restaurantOwnerRoutes from "./router/restaurentOwner.routes"; // Fix typo in file name
 import categorieRoutes from './router/categorie.routes';
 // import reviewRoutes from './router/review.routes';

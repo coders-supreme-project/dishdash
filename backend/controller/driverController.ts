@@ -18,36 +18,41 @@ interface AuthRequest extends Request {
   };
 }
 
-export const registerDriver = async (req: AuthRequest, res: Response): Promise<void> => {
+export const registerDriver = async (req: Request, res: Response): Promise<void> => {
+  
   try {
-    const { firstName, lastName, vehicleType, licenseNumber } = req.body;
-    const userId = req.user?.id;
+    console.log(req.body,'useeer');
+
+    const authReq = req as AuthRequest;
+    console.log(authReq.user,'useeer');
+
+    const { firstName, lastName, vehicleType, licenseNumber,userId } = req.body;
 
     // Validation
-    if (!userId || !firstName || !lastName || !vehicleType || !licenseNumber) {
-      res.status(401).json({ message: 'All fields are required' });
-      return;
-    }
+    // if (!userId || !firstName || !vehicleType || !licenseNumber) {
+    //   res.status(401).json({ message: 'All fields are required' });
+    //   return;
+    // }
 
-    if (!validator.isNumeric(userId.toString())) {
-      res.status(400).json({ message: 'User ID must be a number' });
-      return;
-    }
+    // if (!validator.isNumeric(userId.toString())) {
+    //   res.status(400).json({ message: 'User ID must be a number' });
+    //   return;
+    // }
 
-    if (!validator.isAlpha(firstName) || !validator.isAlpha(lastName)) {
-      res.status(400).json({ message: 'Names must contain only letters' });
-      return;
-    }
+    // if (!validator.isAlpha(firstName) || !validator.isAlpha(lastName)) {
+    //   res.status(400).json({ message: 'Names must contain only letters' });
+    //   return;
+    // }
 
-    if (validator.isEmpty(vehicleType)) {
-      res.status(402).json({ message: 'Vehicle type is required' });
-      return;
-    }
+    // if (validator.isEmpty(vehicleType)) {
+    //   res.status(402).json({ message: 'Vehicle type is required' });
+    //   return;
+    // }
 
-    if (!validator.isAlphanumeric(licenseNumber)) {
-      res.status(403).json({ message: 'License number must be alphanumeric' });
-      return;
-    }
+    // if (!validator.isAlphanumeric(licenseNumber)) {
+    //   res.status(403).json({ message: 'License number must be alphanumeric' });
+    //   return;
+    // }
 
     // Check if driver exists
     const existingDriver = await prisma.driver.findUnique({
@@ -69,18 +74,15 @@ export const registerDriver = async (req: AuthRequest, res: Response): Promise<v
         licenseNumber,
       }
     });
+console.log(newDriver,"newdriver");
 
     const driverToken = jwt.sign(
       { userId: newDriver.userId, driverId: newDriver.id },
-      process.env.JWT_SECRET || "12345",
+      process.env.JWT_SECRET || "1234",
       { expiresIn: '7d' }
     );
-
-    res.cookie('auth_token', driverToken, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+    console.log(driverToken,"drivertoken");
+    
     res.status(201).json({
       message: 'Driver registered successfully',
       driver: newDriver,
@@ -88,13 +90,14 @@ export const registerDriver = async (req: AuthRequest, res: Response): Promise<v
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error hhh' });
   }
 };
 
-export const verifyDriver = async (req: AuthRequest, res: Response): Promise<void> => {
+export const verifyDriver = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.id;
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
@@ -117,9 +120,10 @@ export const verifyDriver = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const fetchData = async (req: AuthRequest, res: Response): Promise<void> => {
+export const fetchData = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const authReq = req as AuthRequest;
+    const userId = authReq.user?.id;
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
