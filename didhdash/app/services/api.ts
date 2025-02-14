@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const DEFAULT_FOOD_IMAGE = 'path/to/default/image.jpg'; // Adjust the path as needed
-const API_BASE_URL = 'http://localhost:5000/api'; // Adjust port as needed
+const API_BASE_URL = 'http://localhost:3000/api'; // Adjust port as needed
 
 const api = axios.create({
   baseURL: API_BASE_URL,

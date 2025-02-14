@@ -11,6 +11,8 @@ export const createOrder = async (req:Request , res: Response): Promise<void> =>
   try {
     const authReq = req as AuthenticatedRequest;
     const { items, totalAmount, restaurantId } = req.body;
+    console.log("req.body",req.body);
+    
     const customerId = authReq.user?.id;
     console.log("customerId",customerId);
     console.log("restaurantId",restaurantId);
@@ -73,6 +75,8 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
     }
     const user = await prisma.user.findUnique({ where: { id: authReq.user.id },include:{customer:true} });
     console.log("authReq.user",authReq.user);
+    console.log("user",authReq.user);
+    
     const orders = await prisma.order.findMany({
       where: {
         customerId: Number(user?.customer?.id),

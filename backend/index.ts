@@ -65,7 +65,7 @@ const testDB = async () => {
 
 // ✅ Run Test on Server Start
 testDB();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 // ✅ Routes
 // app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 

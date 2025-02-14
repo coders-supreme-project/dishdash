@@ -102,7 +102,8 @@ export default function Home() {
         time: "30 mins"
       })));
     } catch (error) {
-      console.error('Error loading data:', error);
+      throw error; 
+
     } finally {
       setLoading(false);
     }
