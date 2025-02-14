@@ -24,7 +24,7 @@ const handleUpdateProfile = async (data: CustomerProfile) => {
     }
 
     const response = await axios.put(
-      'http://localhost:5000/api/customers/profile',
+      'http://localhost:3000/api/customers/profile',
       data,
       {
         headers: {

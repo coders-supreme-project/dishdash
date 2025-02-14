@@ -3,8 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from './user';
 const prisma = new PrismaClient();
 
-export const updateCustomerProfile = async (req: AuthenticatedRequest, res: Response) => {
+export const updateCustomerProfile = async (req: Request, res: Response) => {
   try {
+    const reqAuth = req as AuthenticatedRequest; // Cast the request to our custom type
     // Log incoming request data
     console.log('Update Profile Request:', {
       user: req.user,
@@ -12,11 +13,11 @@ export const updateCustomerProfile = async (req: AuthenticatedRequest, res: Resp
     });
 
     // Get the authenticated user's ID from the token
-    const userId = req.user?.id;
-    if (!userId) {
+    const userId = reqAuth.user?.id;
+    if (!userId){
       console.log('No user ID found in token');
        res.status(401).json({ error: 'Unauthorized' });
-       return
+       return;
     }
 
     const { firstName, lastName, email, phoneNumber, deliveryAddress } = req.body;

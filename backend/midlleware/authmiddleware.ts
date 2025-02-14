@@ -6,7 +6,7 @@ import {Request, Response, NextFunction } from 'express';
  dotenv.config();
  const JWT_SECRET = process.env.JWT_SECRET || '';
 export const authenticateJWT = async (
-  req: AuthenticatedRequest, // Use AuthenticatedRequest here
+  req: Request, // Use AuthenticatedRequest here
   res: Response,
   next: NextFunction
 ): Promise<void> => {
