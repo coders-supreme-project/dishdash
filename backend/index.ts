@@ -13,6 +13,7 @@ import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
 import mediaRoutes from './router/media.controller';
 import googleRoutes from './router/google.routes';
+import orderRoutes from './router/order.routes'; 
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
@@ -41,7 +42,8 @@ app.use('/api', categorieRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
 // app.use('/api', reviewRoutes);
-app.use('/api/restaurant', restaurantRoutes);
+app.use('/api', restaurantRoutes);
+app.use('/api', orderRoutes);
 // app.get('/api/users', async (req, res) => {
 //   const users = await prisma.user.findMany();
 //   res.json(users);
@@ -63,7 +65,7 @@ const testDB = async () => {
 
 // ✅ Run Test on Server Start
 testDB();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 // ✅ Routes
 // app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 
