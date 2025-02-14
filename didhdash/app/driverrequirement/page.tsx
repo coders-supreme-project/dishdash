@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import {jwtDecode} from 'jwt-decode';
 import Swal from 'sweetalert2';
-import { log } from "console";
 
 interface FormData {
   firstName: string;

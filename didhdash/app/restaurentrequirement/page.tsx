@@ -1,4 +1,3 @@
-// filepath: /C:/Users/drong/OneDrive/Bureau/project/dishdash/didhdash/app/restaurentrequirement/page.tsx
 "use client";
 import '@/styles/globals.css';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,20 +18,27 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
 
+// Form Schema
 const formSchema = z.object({
   restaurantName: z.string().min(1, "Restaurant name is required"),
   idCard: z.string().min(1, "ID card is required"),
   rcDocument: z.string().min(1, "RC document is required"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string(), // No longer required
+  lastName: z.string(), // No longer required
   streetAddress: z.string().min(1, "Street address is required"),
   streetAddress2: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(5, "ZIP code is required"),
+  image: z.string().min(1, "Restaurant image is required"),
+  cuisineType: z.string().min(1, "Cuisine type is required"),
+  contactNumber: z.string().min(1, "Contact number is required"),
+  openingH: z.string().min(1, "Opening hours are required"),
+  closingH: z.string().min(1, "Closing hours are required"),
 });
 
 export default function Home() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,50 +46,61 @@ export default function Home() {
       restaurantName: "",
       idCard: "",
       rcDocument: "",
-      firstName: "",
-      lastName: "",
+      firstName: user.customer.firstName, // Set default value from user
+      lastName: user.customer.lastName, // Set default value from user
       streetAddress: "",
       streetAddress2: "",
       city: "",
       state: "",
       zipCode: "",
+      image: "",
+      cuisineType: "",
+      contactNumber: "",
+      openingH: "",
+      closingH: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      console.log(user, "user");
+
+      // Register the restaurant owner
+      const ownerResponse = await axios.post(
+        'http://localhost:3000/api/owner/create',
+        {
+          firstName: user.customer.firstName, // Use value from user
+          lastName: user.customer.lastName || " ", // Use value from user
+          userId: user.id,
+        }
+      );
+
+      console.log('Restaurant owner registration response:', ownerResponse.data);
+
       // Register the restaurant
       const restaurantResponse = await axios.post(
-        'http://localhost:3000/api/restaurant/register',
+        'http://localhost:3000/api/restaurant/create',
         {
-          restaurantName: values.restaurantName,
-          firstName: values.firstName,
-          lastName: values.lastName,
-          streetAddress: values.streetAddress,
-          streetAddress2: values.streetAddress2,
-          city: values.city,
-          state: values.state,
-          zipCode: values.zipCode,
-        },
-        {
-          withCredentials: true,
+          name: values.restaurantName,
+          image: values.image,
+          address: `${values.streetAddress}, ${values.streetAddress2}, ${values.city}, ${values.state}, ${values.zipCode}`,
+          cuisineType: values.cuisineType,
+          contactNumber: values.contactNumber,
+          openingH: values.openingH,
+          closingH: values.closingH,
+          restaurantOwnerId: ownerResponse.data.restaurantOwner.id,
+          restaurantRcId: values.rcDocument,
         }
       );
 
       console.log('Restaurant registration response:', restaurantResponse.data);
-
-      // Handle media upload (ID card and RC document)
+    
+      // Handle media upload (ID card)
       const formDataMedia = new FormData();
       formDataMedia.append('idCard', values.idCard);
-      formDataMedia.append('rcDocument', values.rcDocument);
-      formDataMedia.append('restaurantId', restaurantResponse.data.restaurant.id);
+      formDataMedia.append('restaurantId', restaurantResponse.data.id);
 
-      await axios.post('http://localhost:3000/api/media/create', formDataMedia, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true,
-      });
+      await axios.post('http://localhost:3000/api/media/create', formDataMedia);
 
       console.log('Registration successful');
 
@@ -155,6 +172,7 @@ export default function Home() {
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-6 rounded-lg bg-white p-6 shadow-lg"
             >
+              {/* Restaurant Name */}
               <FormField
                 control={form.control}
                 name="restaurantName"
@@ -175,6 +193,7 @@ export default function Home() {
                 )}
               />
 
+              {/* Owner ID Card */}
               <FormField
                 control={form.control}
                 name="idCard"
@@ -200,18 +219,40 @@ export default function Home() {
                 )}
               />
 
+              {/* Restaurant RC Document (Manual Input) */}
               <FormField
                 control={form.control}
                 name="rcDocument"
-                render={({ field: { value, onChange, ...field } }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
                       Restaurant RC Document <span className="text-red-500">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
+                        placeholder="Enter RC document number"
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Restaurant Image */}
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field: { value, onChange, ...field } }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Restaurant Image <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           onChange(file ? file.name : "");
@@ -225,6 +266,7 @@ export default function Home() {
                 )}
               />
 
+              {/* Personal Information */}
               <div>
                 <h3 className="mb-4 text-lg font-semibold text-gray-900">
                   Personal Information
@@ -236,13 +278,13 @@ export default function Home() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          First Name <span className="text-red-500">*</span>
+                          First Name
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter first name"
+                            value={user.customer.firstName}
                             className="border-gray-300"
-                            {...field}
+                            disabled
                           />
                         </FormControl>
                         <FormMessage className="text-red-500" />
@@ -256,13 +298,13 @@ export default function Home() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Last Name <span className="text-red-500">*</span>
+                          Last Name
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter last name"
+                            value={user.customer.lastName}
                             className="border-gray-300"
-                            {...field}
+                            disabled
                           />
                         </FormControl>
                         <FormMessage className="text-red-500" />
@@ -272,6 +314,7 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Address */}
               <div>
                 <h3 className="mb-4 text-lg font-semibold text-gray-900">
                   Address
@@ -381,6 +424,91 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Cuisine Type */}
+              <FormField
+                control={form.control}
+                name="cuisineType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Cuisine Type <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter cuisine type"
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Contact Number */}
+              <FormField
+                control={form.control}
+                name="contactNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Contact Number <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter contact number"
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Opening Hours */}
+              <FormField
+                control={form.control}
+                name="openingH"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Opening Hours <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Closing Hours */}
+              <FormField
+                control={form.control}
+                name="closingH"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Closing Hours <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        className="border-gray-300"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Submit Button */}
               <Button
                 type="submit"
                 className="w-full bg-[#ff6b00] hover:bg-[#ff8533]"

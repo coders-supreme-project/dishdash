@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import categorieRoutes from './router/categorie.routes';
 // import reviewRoutes from './router/review.routes';
 import restaurantRoutes from './router/restaurant.routes';
-
+import restaurantOwnerRoutes from './router/restaurentOwner.routes';
 import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
 import mediaRoutes from './router/media.controller';
@@ -35,12 +35,13 @@ app.use(cors());
 app.use(express.json());
 // app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
+app.use('/api/owner', restaurantOwnerRoutes);
 
 app.use('/api', categorieRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
 // app.use('/api', reviewRoutes);
-app.use('/api', restaurantRoutes);
+app.use('/api/restaurant', restaurantRoutes);
 // app.get('/api/users', async (req, res) => {
 //   const users = await prisma.user.findMany();
 //   res.json(users);

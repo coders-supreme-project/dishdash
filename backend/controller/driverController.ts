@@ -1,3 +1,4 @@
+// filepath: /c:/Users/drong/OneDrive/Bureau/project/dishdash/backend/controller/driverController.ts
 import { PrismaClient, Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import validator from 'validator';
@@ -19,40 +20,32 @@ interface AuthRequest extends Request {
 }
 
 export const registerDriver = async (req: Request, res: Response): Promise<void> => {
-  
   try {
-    console.log(req.body,'useeer');
-
     const authReq = req as AuthRequest;
-    console.log(authReq.user,'useeer');
-
-    const { firstName, lastName, vehicleType, licenseNumber,userId } = req.body;
+    const { firstName, lastName, vehicleType, licenseNumber, userId } = req.body;
 
     // Validation
-    // if (!userId || !firstName || !vehicleType || !licenseNumber) {
-    //   res.status(401).json({ message: 'All fields are required' });
-    //   return;
-    // }
+    if (!userId || !firstName || !lastName || !vehicleType || !licenseNumber) {
+      res.status(401).json({ message: 'All fields are required' });
+      return;
+    }
 
-    // if (!validator.isNumeric(userId.toString())) {
-    //   res.status(400).json({ message: 'User ID must be a number' });
-    //   return;
-    // }
+    if (!validator.isNumeric(userId.toString())) {
+      res.status(400).json({ message: 'User ID must be a number' });
+      return;
+    }
 
-    // if (!validator.isAlpha(firstName) || !validator.isAlpha(lastName)) {
-    //   res.status(400).json({ message: 'Names must contain only letters' });
-    //   return;
-    // }
+  
 
-    // if (validator.isEmpty(vehicleType)) {
-    //   res.status(402).json({ message: 'Vehicle type is required' });
-    //   return;
-    // }
+    if (validator.isEmpty(vehicleType)) {
+      res.status(402).json({ message: 'Vehicle type is required' });
+      return;
+    }
 
-    // if (!validator.isAlphanumeric(licenseNumber)) {
-    //   res.status(403).json({ message: 'License number must be alphanumeric' });
-    //   return;
-    // }
+    if (!validator.isAlphanumeric(licenseNumber)) {
+      res.status(403).json({ message: 'License number must be alphanumeric' });
+      return;
+    }
 
     // Check if driver exists
     const existingDriver = await prisma.driver.findUnique({
@@ -74,15 +67,19 @@ export const registerDriver = async (req: Request, res: Response): Promise<void>
         licenseNumber,
       }
     });
-console.log(newDriver,"newdriver");
+
+    // Update user's role to driver
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: 'driver' }
+    });
 
     const driverToken = jwt.sign(
       { userId: newDriver.userId, driverId: newDriver.id },
       process.env.JWT_SECRET || "1234",
       { expiresIn: '7d' }
     );
-    console.log(driverToken,"drivertoken");
-    
+
     res.status(201).json({
       message: 'Driver registered successfully',
       driver: newDriver,
@@ -90,7 +87,7 @@ console.log(newDriver,"newdriver");
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error hhh' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
