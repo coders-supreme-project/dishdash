@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useContext } from 'react';
-import axios from 'axios';
+import { useState, useContext, useEffect } from 'react';
 import CustomerProfileForm from '@/components/CustomerProfileForm';
 import { CustomerProfile } from '@/types/customer';
 import { AuthContext } from '@/context/page';
@@ -12,42 +11,68 @@ export default function CustomerProfilePage() {
   const auth = useContext(AuthContext);
   const router = useRouter();
 
-// page.tsx
-const handleUpdateProfile = async (data: CustomerProfile) => {
-  setIsLoading(true);
-  try {
-    const token = auth?.getToken(); // Use getToken() to ensure the latest token
-    console.log('Token used for request:', token);
-    
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+  // Add debugging logs
+  useEffect(() => {
+    console.log('Auth Context:', {
+      token: auth?.token,
+      user: auth?.user,
+      isAuthenticated: Boolean(auth?.token && auth?.user)
+    });
 
-    const response = await axios.put(
-      'http://localhost:3000/api/customers/profile',
-      data,
-      {
+    // Check localStorage as well
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    console.log('LocalStorage:', {
+      token: storedToken,
+      user: storedUser
+    });
+
+    // More robust authentication check
+    const isAuthenticated = Boolean(auth?.token || storedToken);
+    if (!isAuthenticated) {
+      console.log('No authentication found, redirecting to login...');
+      router.push('/login');
+    }
+  }, [auth, router]);
+
+  const handleUpdateProfile = async (data: CustomerProfile) => {
+    setIsLoading(true);
+    try {
+      const token = auth?.token || localStorage.getItem("token");
+      
+      if (!token) {
+        console.error('No authentication token found');
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/customers/profile', {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        withCredentials: true
+        body: JSON.stringify(data)
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || responseData.details || 'Failed to update profile');
       }
-    );
 
-    console.log('Update response:', response.data);
-    alert('Profile updated successfully');
-  } catch (error: any) {
-    console.error('Update error:', error.response?.data || error);
-    alert(error.response?.data?.error || 'Failed to update profile');
-  } finally {
-    setIsLoading(false);
-  }
-};
+      return responseData;
+    } catch (error: any) {
+      console.error('Update error:', error);
+      throw new Error(error.message || 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // If no auth, show loading or redirect
-  if (!auth?.token) {
-    return <div>Please login to view this page</div>;
+  // Show loading state while checking authentication
+  if (typeof window !== 'undefined' && !auth?.token && !localStorage.getItem("token")) {
+    return <div className="min-h-screen flex items-center justify-center">Checking authentication...</div>;
   }
 
   return (

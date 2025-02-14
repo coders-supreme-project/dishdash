@@ -4,7 +4,7 @@ import { authenticateJWT } from '../midlleware/authmiddleware';
 
 const router = Router();
 
-// Route without middleware (as requested)
-router.put('/customers/profile',authenticateJWT, updateCustomerProfile);
+// Update route to match the frontend request path
+router.put('/profile', authenticateJWT, updateCustomerProfile);
 
 export default router;

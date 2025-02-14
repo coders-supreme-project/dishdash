@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:3000/api'; // Adjust port as needed
+const API_BASE_URL = 'http://127.0.0.1:5000/api'; // Base URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +11,7 @@ const api = axios.create({
 
 export const fetchCategories = async (all: boolean = false) => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/api/categories/', {
+    const response = await api.get('/categories', {
       params: {
         limit: all ? undefined : 6
       }
@@ -23,15 +23,19 @@ export const fetchCategories = async (all: boolean = false) => {
   }
 };
 
-
 export const fetchRestaurants = async (all: boolean = false) => {
-  const response = await api.get('/restaurant/restaurants', {
-    params: {
-      limit: all ? undefined : 3,
-      include: 'categories,menuItems'
-    }
-  });
-  return response.data;
+  try {
+    const response = await api.get('/restaurants', {
+      params: {
+        limit: all ? undefined : 3,
+        include: 'categories,menuItems'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching restaurants:', error);
+    return [];
+  }
 };
 
 export const searchRestaurants = async (params: { 

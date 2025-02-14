@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import Image from 'next/image';
 import { CustomerProfile } from '@/types/customer';
 import { User, Camera, MapPin, Phone, Mail, Lock } from 'lucide-react';
+import { AuthContext } from '@/context/page';
 
 interface CustomerProfileFormProps {
   onSubmit: (data: CustomerProfile) => Promise<void>;
@@ -11,15 +12,17 @@ interface CustomerProfileFormProps {
 }
 
 export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerProfileFormProps) {
-  const [formData, setFormData] = useState<CustomerProfile>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    deliveryAddress: '',
+  const authContext = useContext(AuthContext);
+
+  const [formData, setFormData] = useState<CustomerProfile>(() => ({
+    firstName: authContext?.user?.customer?.firstName || '',
+    lastName: authContext?.user?.customer?.lastName || '',
+    email: authContext?.user?.email || '',
+    phoneNumber: authContext?.user?.phoneNumber || '',
+    deliveryAddress: authContext?.user?.customer?.deliveryAddress || '',
     password: '',
-    imageUrl: '',
-  });
+    imageUrl: authContext?.user?.customer?.imageUrl || '',
+  }));
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -31,10 +34,16 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit
+        alert('Image size should be less than 1MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setFormData(prev => ({ ...prev, imageUrl: reader.result as string }));
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        setFormData(prev => ({ ...prev, imageUrl: base64String }));
       };
       reader.readAsDataURL(file);
     }
@@ -42,7 +51,39 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    
+    const updateData: CustomerProfile = {
+      ...formData,
+      ...Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value !== '')
+      ),
+    };
+
+    try {
+      const updatedProfile = await onSubmit(updateData);
+      
+      // Update the AuthContext with the new user data
+      if (authContext?.updateUserData && updatedProfile) {
+        const updatedUserData = {
+          ...authContext.user,
+          email: updateData.email || authContext.user.email,
+          phoneNumber: updateData.phoneNumber || authContext.user.phoneNumber,
+          customer: {
+            ...authContext.user.customer,
+            firstName: updateData.firstName || authContext.user.customer?.firstName,
+            lastName: updateData.lastName || authContext.user.customer?.lastName,
+            deliveryAddress: updateData.deliveryAddress || authContext.user.customer?.deliveryAddress,
+            imageUrl: updateData.imageUrl || authContext.user.customer?.imageUrl,
+          }
+        };
+        authContext.updateUserData(updatedUserData);
+      }
+      
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    }
   };
 
   return (

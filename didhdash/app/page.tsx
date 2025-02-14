@@ -247,6 +247,7 @@ export default function Home() {
                   <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
                     Register
                   </Link>
+                  
                 </div>
               ) : (
                 <button 
@@ -270,7 +271,7 @@ export default function Home() {
               width={300}
               height={300}
               alt="Banner"
-             
+              priority
               className="rounded-full absolute right-6 top-1/2 -translate-y-1/2"
             />
           </div>

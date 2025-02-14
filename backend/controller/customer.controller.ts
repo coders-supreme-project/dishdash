@@ -3,33 +3,18 @@ import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from './user';
 const prisma = new PrismaClient();
 
-export const updateCustomerProfile = async (req: Request, res: Response) => {
+export const updateCustomerProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const reqAuth = req as AuthenticatedRequest; // Cast the request to our custom type
-    // Log incoming request data
-    console.log('Update Profile Request:', {
-      user: req.user,
-      body: req.body
-    });
-
-    // Get the authenticated user's ID from the token
+    const reqAuth = req as AuthenticatedRequest;
     const userId = reqAuth.user?.id;
-    if (!userId){
+    
+    if (!userId) {
       console.log('No user ID found in token');
-       res.status(401).json({ error: 'Unauthorized' });
-       return;
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
-    const { firstName, lastName, email, phoneNumber, deliveryAddress } = req.body;
-
-    // Log the data we're going to update
-    console.log('Updating with data:', {
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-      deliveryAddress
-    });
+    const { firstName, lastName, email, phoneNumber, deliveryAddress, imageUrl, password } = req.body;
 
     // Find the customer associated with the authenticated user
     const customer = await prisma.customer.findFirst({
@@ -38,24 +23,35 @@ export const updateCustomerProfile = async (req: Request, res: Response) => {
 
     if (!customer) {
       console.log('No customer found for userId:', userId);
-       res.status(404).json({ error: 'Customer profile not found' });
-       return;
+      res.status(404).json({ error: 'Customer profile not found' });
+      return;
+    }
+
+    // Prepare the update data
+    const updateData: any = {
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+      deliveryAddress: deliveryAddress || undefined,
+      imageUrl: imageUrl || undefined,
+      user: {
+        update: {
+          email: email || undefined,
+          phoneNumber: phoneNumber || undefined,
+        }
+      }
+    };
+
+    // If password is provided, hash it and include in update
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.user.update.passwordHash = hashedPassword;
     }
 
     // Update the customer profile
     const updatedCustomer = await prisma.customer.update({
       where: { id: customer.id },
-      data: {
-        firstName: firstName || customer.firstName,
-        lastName: lastName || customer.lastName,
-        deliveryAddress: deliveryAddress || customer.deliveryAddress,
-        user: {
-          update: {
-            email: email || undefined,
-            phoneNumber: phoneNumber || undefined,
-          }
-        }
-      },
+      data: updateData,
       include: {
         user: {
           select: {
@@ -67,15 +63,13 @@ export const updateCustomerProfile = async (req: Request, res: Response) => {
     });
 
     console.log('Profile updated successfully:', updatedCustomer);
-     res.json(updatedCustomer);  // ensure returning the response
-     return
+    res.json(updatedCustomer);
 
   } catch (error) {
     console.error('Profile update error:', error);
-     res.status(500).json({ 
+    res.status(500).json({ 
       error: 'Failed to update profile',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
-    return
   }
 };

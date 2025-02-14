@@ -5,47 +5,55 @@ import type { NextRequest } from 'next/server';
 export async function PUT(request: NextRequest) {
   try {
     const token = request.headers.get('Authorization');
-    console.log('Received token:', token); // Debug log
 
     if (!token) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    // Forward the request to your Express backend
-    const backendResponse = await fetch('http://localhost:3000/api/customers/profile', {
+    const body = await request.json();
+
+    // Update the URL to match your Express backend route
+    const backendResponse = await fetch('http://localhost:5000/api/customers/profile', {
       method: 'PUT',
       headers: {
         'Authorization': token,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(await request.json())
+      body: JSON.stringify(body),
+      cache: 'no-store', // Disable caching
     });
 
-    const data = await backendResponse.json();
-    
     if (!backendResponse.ok) {
-      return NextResponse.json(data, { status: backendResponse.status });
+      const errorData = await backendResponse.json();
+      return NextResponse.json(errorData, { status: backendResponse.status });
     }
 
+    const data = await backendResponse.json();
     return NextResponse.json(data);
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('Profile update error:', error);
     return NextResponse.json(
-      { error: 'Failed to update profile' },
+      { error: 'Failed to update profile', details: error.message },
       { status: 500 }
     );
   }
 }
 
-// Handle OPTIONS request for CORS
+// Add CORS headers
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Origin': 'http://localhost:3000',
-      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
     },
   });
 }
+
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
