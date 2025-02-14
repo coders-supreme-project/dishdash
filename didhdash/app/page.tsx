@@ -13,6 +13,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
 
+import Career from "./career/page";
+
+
+
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
   { name: "Cheeseburger", icon: "🍔", price: 8.99 },
@@ -356,6 +360,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+   
       <div className="max-w-[1400px] mx-auto p-4 flex gap-4">
         {/* Sidebar */}
         <div className="w-[200px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)] flex flex-col">
@@ -706,11 +711,11 @@ export default function Home() {
             </div>
           )}
         </div>
-
+        
         {/* Right Sidebar */}
         <div className="w-[300px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold">Your Balance</h2>
+            <h2 className="font-semibold">Your Balance</h2> < Career/>
             <Image
               src={DEFAULT_PROFILE}
               alt="Profile"

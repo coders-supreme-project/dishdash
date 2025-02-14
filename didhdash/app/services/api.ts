@@ -12,7 +12,7 @@ const api = axios.create({
 
 export const fetchCategories = async (all: boolean = false) => {
   try {
-    const response = await api.get('/categories', {
+    const response = await axios.get('http://127.0.0.1:3000/api/categories/', {
       params: {
         limit: all ? undefined : 6
       }
