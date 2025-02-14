@@ -2,6 +2,8 @@
 
 import { Bell, ChevronRight, CreditCard, MapPin, Search, Wallet, Home as HomeIcon, ShoppingBag, Heart, MessageCircle, Clock, Receipt, Settings } from "lucide-react";
 import Image from "next/image";
+
+import Link from 'next/link';
 import { useState, useEffect } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
@@ -231,6 +233,14 @@ export default function Home() {
               <button className="p-2 hover:bg-gray-100 rounded-xl">
                 <Bell className="h-5 w-5 text-gray-600" />
               </button>
+              <div className="flex gap-2">
+                <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
+                  Login
+                </Link>
+                <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
+                  Register
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -500,7 +510,6 @@ export default function Home() {
               <div>Balance</div>
               <Wallet className="h-5 w-5" />
             </div>
-            <div className="text-2xl font-bold mb-4">${balance.toLocaleString()}</div>
             <div className="flex gap-2">
               <button className="balance-btn">
                 <CreditCard className="h-4 w-4" /> Top Up

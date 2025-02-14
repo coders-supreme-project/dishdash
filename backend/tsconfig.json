@@ -7,8 +7,9 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["./node_modules/@types", "./types"] // Ensure it includes your types
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "types/express.d.ts"],
   "exclude": ["node_modules"]
 }

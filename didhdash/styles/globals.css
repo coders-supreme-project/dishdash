@@ -1,1 +1,15 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+.yellow {
+  color: #FFB800;
+}
+
+.bg-yellow {
+  background-color: #FFB800;
+}
+
+/* Add any other custom styles here */
