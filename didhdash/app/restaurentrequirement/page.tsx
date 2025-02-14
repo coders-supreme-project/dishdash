@@ -1,3 +1,4 @@
+// filepath: /C:/Users/drong/OneDrive/Bureau/project/dishdash/didhdash/app/restaurentrequirement/page.tsx
 "use client";
 import '@/styles/globals.css';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,9 @@ import {
   FormLabel,
   FormMessage,
 } from "../../components/ui/form";
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   restaurantName: z.string().min(1, "Restaurant name is required"),
@@ -29,6 +33,7 @@ const formSchema = z.object({
 });
 
 export default function Home() {
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -45,9 +50,60 @@ export default function Home() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Handle form submission here
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      // Register the restaurant
+      const restaurantResponse = await axios.post(
+        'http://localhost:3000/api/restaurant/register',
+        {
+          restaurantName: values.restaurantName,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          streetAddress: values.streetAddress,
+          streetAddress2: values.streetAddress2,
+          city: values.city,
+          state: values.state,
+          zipCode: values.zipCode,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log('Restaurant registration response:', restaurantResponse.data);
+
+      // Handle media upload (ID card and RC document)
+      const formDataMedia = new FormData();
+      formDataMedia.append('idCard', values.idCard);
+      formDataMedia.append('rcDocument', values.rcDocument);
+      formDataMedia.append('restaurantId', restaurantResponse.data.restaurant.id);
+
+      await axios.post('http://localhost:3000/api/media/create', formDataMedia, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true,
+      });
+
+      console.log('Registration successful');
+
+      // Show SweetAlert and redirect to login page
+      Swal.fire({
+        title: 'Restaurant registered successfully',
+        text: 'Please login again',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        router.push('/login');
+      });
+
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Registration failed:', error.response?.data?.message || error.message);
+      } else {
+        console.error('Registration failed:', error);
+      }
+    }
   }
 
   return (

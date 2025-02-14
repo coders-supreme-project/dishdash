@@ -4,8 +4,8 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import "@/styles/globals.css";
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
-import Cookies from 'js-cookie';
+import {jwtDecode} from 'jwt-decode';
+import Swal from 'sweetalert2';
 
 interface FormData {
   firstName: string;
@@ -23,8 +23,9 @@ interface FormData {
 }
 
 interface DecodedToken {
+  id: number;
   userId: number;
-  // add other token fields if needed
+  // Add other token fields if needed
 }
 
 export default function DriverInfoForm() {
@@ -44,6 +45,11 @@ export default function DriverInfoForm() {
     insuranceProof: null,
   });
 
+  const token = localStorage.getItem('token') || '{}';
+  const decoded = jwtDecode<DecodedToken>(token); // Decode the token to get the user ID
+  const userId = decoded.id; // Extract the user ID from the decoded token
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -62,66 +68,83 @@ export default function DriverInfoForm() {
   };
 
   const handleSubmit = async (e: FormEvent) => {
-    console.log("salem");
-    
     e.preventDefault();
-    
-    try {
-      // Get token from cookies
-      const token = Cookies.get('auth_token');
-      console.log(token,"token");
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-    
-      // Decode token to get userId
-      const decoded = jwtDecode<DecodedToken>(token);
-      
-      // First, register the driver with userId
-      const driverResponse = await axios.post('/api/driver/register', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        vehicleType: formData.vehicleType,
-        licenseNumber: formData.licenseNumber,
-        userId: decoded.userId // Add userId from token
-      }, {
-        withCredentials: true,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
 
-      // Handle media upload
+    try {
+      // Register the driver
+      const driverResponse = await axios.post(
+        'http://localhost:3000/api/driver/register',
+        {
+          firstName: user.firstName || "saka",
+          lastName: user.lastName || "last",
+          vehicleType: formData.vehicleType,
+          licenseNumber: formData.licenseNumber,
+          userId: userId, // Include the user ID from the decoded token
+        }
+      );
+
+      console.log('Driver registration response:', driverResponse.data);
+
+      // Handle media upload (insurance proof)
       if (formData.insuranceProof) {
         const formDataMedia = new FormData();
         formDataMedia.append('file', formData.insuranceProof);
         formDataMedia.append('driverId', driverResponse.data.driver.id);
 
-        await axios.post('/api/media/create', formDataMedia, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
-          },
-          withCredentials: true
-        });
+        await axios.post('http://localhost:3000/api/media/create', formDataMedia);
       }
 
       console.log('Registration successful');
-      router.push('/dashboard');
-      
+
+      // Show SweetAlert and redirect to login page
+      Swal.fire({
+        title: 'Switched to a driver',
+        text: 'Please login again',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        router.push('/login');
+      });
+
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Registration failed:', error.response?.data?.message || error.message);
+      } else {
+        console.error('Registration failed:', error);
       }
     }
   };
 
   return (
-    <form onSubmit={(e) => handleSubmit(e)} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Driver's License Details */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-800">Driver's License Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div>
             <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700">License Number</label>
             <input
@@ -135,93 +158,12 @@ export default function DriverInfoForm() {
           </div>
 
           <div>
-            <label htmlFor="issuingCountry" className="block text-sm font-medium text-gray-700">Issuing Country or State</label>
-            <input
-              type="text"
-              id="issuingCountry"
-              name="issuingCountry"
-              value={formData.issuingCountry}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="licenseCategory" className="block text-sm font-medium text-gray-700">Category of License</label>
-            <select
-              id="licenseCategory"
-              name="licenseCategory"
-              value={formData.licenseCategory}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select Category</option>
-              <option value="commercial">Commercial</option>
-              <option value="standard">Standard</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Vehicle Information */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800">Vehicle Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="vehicleMakeModelYear" className="block text-sm font-medium text-gray-700">Vehicle Make, Model, and Year</label>
-            <input
-              type="text"
-              id="vehicleMakeModelYear"
-              name="vehicleMakeModelYear"
-              value={formData.vehicleMakeModelYear}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="vehicleRegistrationNumber" className="block text-sm font-medium text-gray-700">Vehicle Registration Number</label>
-            <input
-              type="text"
-              id="vehicleRegistrationNumber"
-              name="vehicleRegistrationNumber"
-              value={formData.vehicleRegistrationNumber}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
             <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700">Vehicle Type</label>
             <input
               type="text"
               id="vehicleType"
               name="vehicleType"
               value={formData.vehicleType}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="insuranceNumber" className="block text-sm font-medium text-gray-700">Vehicle Insurance Number</label>
-            <input
-              type="text"
-              id="insuranceNumber"
-              name="insuranceNumber"
-              value={formData.insuranceNumber}
-              onChange={handleChange}
-              className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="insuranceExpiry" className="block text-sm font-medium text-gray-700">Insurance Expiry Date</label>
-            <input
-              type="date"
-              id="insuranceExpiry"
-              name="insuranceExpiry"
-              value={formData.insuranceExpiry}
               onChange={handleChange}
               className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -239,22 +181,6 @@ export default function DriverInfoForm() {
             id="insuranceProof"
             name="insuranceProof"
             onChange={handleFileChange}
-            className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* Driving Experience */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800">Driving Experience</h2>
-        <div>
-          <label htmlFor="drivingExperience" className="block text-sm font-medium text-gray-700">Years of Driving Experience</label>
-          <input
-            type="number"
-            id="drivingExperience"
-            name="drivingExperience"
-            value={formData.drivingExperience}
-            onChange={handleChange}
             className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
