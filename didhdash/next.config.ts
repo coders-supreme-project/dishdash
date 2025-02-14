@@ -6,10 +6,11 @@ const nextConfig = {
     domains: [
       "images.unsplash.com",
       "loremflickr.com",
-      "picsum.photos"  // Ensure this domain is correctly included
+      "picsum.photos",
+      "upload.wikimedia.org"  // ✅ Add this to allow Wikimedia images
     ],
   },
   i18n, // ✅ Ensure i18n is properly included
 };
 
-export default nextConfig;  // ✅ ES module export (works with Next.js TypeScript support)
+export default nextConfig;

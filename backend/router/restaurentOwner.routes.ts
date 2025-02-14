@@ -1,24 +1,22 @@
-// import express from "express";
-// import {} from "../controller/restaurentOwner.controller";
+import express from "express";
+import restaurentOwner from "../controller/restaurentOwner";
+import {authenticateJWT} from "../midlleware/authmiddleware"
 
-// const router = express.Router();
+const router = express.Router();
 
-// // ✅ Restaurant Profile
-// router.put("/update-profile",  restaurantController.updateProfile);
+// ✅ Restaurant Profile
+router.put("/update-profile", restaurentOwner.updateProfile);
 
-// // ✅ Restaurant Creation
-// router.post("/create",  restaurantController.createRestaurant);
+// ✅ Restaurant Creation
+router.post("/create", restaurentOwner.createRestaurant);
 
-// // ✅ Menu Items Management
-// router.post("/menu-item",  restaurantController.createItem);
-// router.put("/menu-item/:id", restaurantController.updateItem);
-// router.delete("/menu-item/:id",  restaurantController.deleteItem);
+// ✅ Menu Items Management
+router.post("/menu-item", restaurentOwner.createItem);
+router.put("/menu-item/:id", restaurentOwner.updateItem);
+router.delete("/menu-item/:id", restaurentOwner.deleteItem);
 
-// // ✅ Categories
-// router.post("/category",  restaurantController.addCategory);
-// router.get("/menu/:id", restaurantController.getAllItems);
+// ✅ Retrieve Items
+router.get("/menu/:id", restaurentOwner.getAllItems);
+router.get("/:id", restaurentOwner.getRestaurantOwnerById);
 
-// // ✅ Authentication & Logout
-// router.post("/logout", restaurantController.logOutResto);
-
-// export default router;
+export default router;

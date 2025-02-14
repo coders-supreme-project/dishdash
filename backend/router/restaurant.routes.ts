@@ -1,20 +1,22 @@
-import express from "express";
-import restaurantController from "../controller/restaurant.controller";
+import { Router } from 'express';
+import {
+  createRestaurant,
+  getAllRestaurants,
+  getRestaurantById,
+  updateRestaurant,
+  deleteRestaurant,
+  searchRestaurants,
+  getRestaurantMenuByCategory,
+} from '../controller/restaurant.controller';
 
-const router = express.Router();
+const router = Router();
 
-// ✅ Restaurant Profile
-router.put("/update-profile", restaurantController.updateProfile);
-
-// ✅ Restaurant Creation
-router.post("/create", restaurantController.createRestaurant);
-
-// ✅ Menu Items Management
-router.post("/menu-item", restaurantController.createItem);
-router.put("/menu-item/:id", restaurantController.updateItem);
-router.delete("/menu-item/:id", restaurantController.deleteItem);
-
-// ✅ Retrieve Items
-router.get("/menu/:id", restaurantController.getAllItems);
+router.get('/restaurants/search', searchRestaurants);
+router.get('/restaurants', getAllRestaurants);
+router.post('/restaurants', createRestaurant);
+router.get('/restaurants/:id', getRestaurantById);
+router.put('/restaurants/:id', updateRestaurant);
+router.delete('/restaurants/:id', deleteRestaurant);
+router.get('/restaurants/:restaurantId/menu-categories', getRestaurantMenuByCategory);
 
 export default router;

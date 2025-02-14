@@ -5,12 +5,12 @@ import authRoutes from "./router/user";
 import dotenv from "dotenv";
 import helmet from 'helmet';
 import cookieParser from "cookie-parser"; // ✅ Add cookie-parser for authentication
-// import restaurantOwnerRoutes from "./router/restaurentOwner.routes"; // Fix typo in file name
+import restaurantOwnerRoutes from "./router/restaurentOwner.routes"; // Fix typo in file name
 import categorieRoutes from './router/categorie.routes';
 // import reviewRoutes from './router/review.routes';
 import restaurantRoutes from './router/restaurant.routes';
 import customerRoutes from './router/customer.routes';
-
+import googleRoutes from './router/google.routes';
 
 dotenv.config(); // ✅ Load environment variables
 
@@ -21,7 +21,7 @@ dotenv.config();
 app.use(express.json());
 app.use("/api/user", authRoutes);
 
-
+app.use('/api/auth', googleRoutes);
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
@@ -57,7 +57,7 @@ const testDB = async () => {
 testDB();
 
 // ✅ Routes
-// app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
+app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;

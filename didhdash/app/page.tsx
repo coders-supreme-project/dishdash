@@ -4,10 +4,12 @@ import { Bell, ChevronRight, CreditCard, MapPin, Search, Wallet, Home as HomeIco
 import Image from "next/image";
 
 import Link from 'next/link';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
 import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants } from "./services/api";
+import { AuthContext } from '@/context/page';
+import { useRouter } from 'next/navigation';
 
 
 const orderMenu = [
@@ -32,6 +34,10 @@ const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877
 const DEFAULT_PROFILE = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop";
 
 export default function Home() {
+   const router = useRouter();
+   const handleProfileClick = () => {
+    router.push("/dashboardrestaurent"); // Redirect to dashboard
+  };
   const [balance] = useState(12000);
   const [categories, setCategories] = useState<any[]>([]);
   const [restaurants, setRestaurants] = useState<any[]>([]);
@@ -49,6 +55,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [isSearching, setIsSearching] = useState(false);
+
+  const authContext = useContext(AuthContext);
+  const isLoggedIn = authContext?.user != null;
 
   // Move loadData inside the component and implement it
   const loadData = async () => {
@@ -195,7 +204,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold">Hello, Patricia</h1>
+              <h1 className="text-2xl font-semibold" >Hello, Patricia</h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-4">
@@ -233,15 +242,25 @@ export default function Home() {
               <button className="p-2 hover:bg-gray-100 rounded-xl">
                 <Bell className="h-5 w-5 text-gray-600" />
               </button>
-              <div className="flex gap-2">
-                <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
-                  Login
-                </Link>
-                <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
-                  Register
-                </Link>
-              </div>
+              {!isLoggedIn ? (
+                <div className="flex gap-2">
+                  <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
+                    Login
+                  </Link>
+                  <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
+                    Register
+                  </Link>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => authContext?.logout()} 
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Logout
+                </button>
+              )}
             </div>
+            <button onClick={handleProfileClick}>Go to Dashboard</button>
           </div>
 
           {/* Banner */}
@@ -257,6 +276,7 @@ export default function Home() {
               alt="Banner"
              
               className="rounded-full absolute right-6 top-1/2 -translate-y-1/2"
+              
             />
           </div>
 
@@ -496,6 +516,7 @@ export default function Home() {
         <div className="w-[300px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)]">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-semibold">Your Balance</h2>
+            
             <Image
               src={DEFAULT_PROFILE}
               alt="Profile"
