@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, phoneNumber?: string, address?: string) => Promise<void>;
   logout: () => void;
+  getToken: () => string | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,12 +22,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    if (storedToken && storedUser) {
+    if (storedToken) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
     }
-  }, []);
+  }, [token]); // Ensure token is updated whenever it changes
+  
+
+  const getToken = () => {
+    const token = localStorage.getItem("token");
+    console.log("Current Token:", token);
+    return token;
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -36,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      console.log("Login Successful - Token:", token);
       router.push("/");
     } catch (error) {
       console.error("Login failed", error);
@@ -61,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, getToken }}>
       {children}
     </AuthContext.Provider>
   );

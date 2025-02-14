@@ -1,99 +1,80 @@
+import { Response, Request } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
-
+import { AuthenticatedRequest } from './user';
 const prisma = new PrismaClient();
 
-// Create a new customer
-export const createCustomer = async (req: Request, res: Response) => {
-  const { firstName, lastName, email, phoneNumber, deliveryAddress, userId } = req.body;
+export const updateCustomerProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const customer = await prisma.customer.create({
-      data: {
-        firstName,
-        lastName,
-        deliveryAddress,
-        userId,
-      },
+    // Log incoming request data
+    console.log('Update Profile Request:', {
+      user: req.user,
+      body: req.body
     });
-    res.status(201).json(customer);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create customer' });
-  }
-};
 
-// Get all customers
-export const getAllCustomers = async (req: Request, res: Response) => {
-  try {
-    const customers = await prisma.customer.findMany({
-      include: {
-        user: {
-          select: {
-            email: true,
-            phoneNumber: true,
-          },
-        },
-      },
-    });
-    res.json(customers);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch customers' });
-  }
-};
-
-// Get a customer by ID
-export const getCustomerById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const customer = await prisma.customer.findUnique({
-      where: { id: Number(id) },
-      include: {
-        user: {
-          select: {
-            email: true,
-            phoneNumber: true,
-          },
-        },
-        orders: true,
-      },
-    });
-    if (customer) {
-      res.json(customer);
-    } else {
-      res.status(404).json({ error: 'Customer not found' });
+    // Get the authenticated user's ID from the token
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log('No user ID found in token');
+       res.status(401).json({ error: 'Unauthorized' });
+       return
     }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch customer' });
-  }
-};
 
-// Update a customer
-export const updateCustomer = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { firstName, lastName, deliveryAddress } = req.body;
-  try {
-    const customer = await prisma.customer.update({
-      where: { id: Number(id) },
+    const { firstName, lastName, email, phoneNumber, deliveryAddress } = req.body;
+
+    // Log the data we're going to update
+    console.log('Updating with data:', {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      deliveryAddress
+    });
+
+    // Find the customer associated with the authenticated user
+    const customer = await prisma.customer.findFirst({
+      where: { userId: userId }
+    });
+
+    if (!customer) {
+      console.log('No customer found for userId:', userId);
+       res.status(404).json({ error: 'Customer profile not found' });
+       return;
+    }
+
+    // Update the customer profile
+    const updatedCustomer = await prisma.customer.update({
+      where: { id: customer.id },
       data: {
-        firstName,
-        lastName,
-        deliveryAddress,
+        firstName: firstName || customer.firstName,
+        lastName: lastName || customer.lastName,
+        deliveryAddress: deliveryAddress || customer.deliveryAddress,
+        user: {
+          update: {
+            email: email || undefined,
+            phoneNumber: phoneNumber || undefined,
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            phoneNumber: true,
+          },
+        },
       },
     });
-    res.json(customer);
+
+    console.log('Profile updated successfully:', updatedCustomer);
+     res.json(updatedCustomer);  // ensure returning the response
+     return
+
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update customer' });
+    console.error('Profile update error:', error);
+     res.status(500).json({ 
+      error: 'Failed to update profile',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return
   }
 };
-
-// Delete a customer
-export const deleteCustomer = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    await prisma.customer.delete({
-      where: { id: Number(id) },
-    });
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete customer' });
-  }
-}; 

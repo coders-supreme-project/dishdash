@@ -139,23 +139,23 @@ export const searchRestaurants = async (req: Request, res: Response) => {
         media: true,
       },
     });
-
+  
     // If searching by price range, filter restaurants that have at least one menu item in range
-    const filteredRestaurants = minPrice || maxPrice
-      ? restaurants.filter(restaurant => 
-          restaurant.menuItems.some(item => 
-            (!minPrice || item.price >= Number(minPrice)) &&
-            (!maxPrice || item.price <= Number(maxPrice))
-          )
+    const filteredRestaurants = (minPrice || maxPrice)
+    ? restaurants.filter(restaurant =>
+        restaurant.menuItems.some(item =>
+          (minPrice ? Number(item.price) >= Number(minPrice) : true) &&
+          (maxPrice ? Number(item.price) <= Number(maxPrice) : true)
         )
-      : restaurants;
-
-    res.status(200).json(filteredRestaurants);
+      )
+    : restaurants;
+  
+  res.status(200).json(filteredRestaurants);
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ error: 'Failed to search restaurants' });
   }
-};
+}
 
 export const getRestaurantMenuByCategory = async (req: Request, res: Response) => {
   const { restaurantId } = req.params;
@@ -186,4 +186,4 @@ export const getRestaurantMenuByCategory = async (req: Request, res: Response) =
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch restaurant menu' });
   }
-};
+}

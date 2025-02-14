@@ -1,19 +1,10 @@
 import { Router } from 'express';
-import {
-  createCustomer,
-  getAllCustomers,
-  getCustomerById,
-  updateCustomer,
-  deleteCustomer,
-} from '../controller/customer.controller';
+import { updateCustomerProfile } from '../controller/customer.controller';
+import { authenticateJWT } from '../midlleware/authmiddleware';
 
 const router = Router();
 
-// Define routes
-router.post('/customers', createCustomer);
-router.get('/customers', getAllCustomers);
-router.get('/customers/:id', getCustomerById);
-router.put('/customers/:id', updateCustomer);
-router.delete('/customers/:id', deleteCustomer);
+// Route without middleware (as requested)
+router.put('/customers/profile',authenticateJWT, updateCustomerProfile);
 
-export default router; 
+export default router;
