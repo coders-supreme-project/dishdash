@@ -5,13 +5,17 @@ import cors from "cors";
 import authRoutes from "./router/user";
 import dotenv from "dotenv";
 import helmet from 'helmet';
-import cookieParser from "cookie-parser";
+// import restaurantOwnerRoutes from "./router/restaurentOwner.routes"; // Fix typo in file name
 import categorieRoutes from './router/categorie.routes';
 import restaurantRoutes from './router/restaurant.routes';
+import restaurantOwnerRoutes from './router/restaurentOwner.routes';
+import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
+import mediaRoutes from './router/media.controller';
 import googleRoutes from './router/google.routes';
 
 dotenv.config(); // ✅ Load environment variables
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
 app.use(helmet())
@@ -35,13 +39,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(cookieParser());
+// app.use(cookieParser()); // ✅ Needed for handling authentication tokens
+
+app.use('/api/owner', restaurantOwnerRoutes);
 
 // Routes
 app.use("/api/user", authRoutes);
 app.use('/api', categorieRoutes);
 app.use('/api', restaurantRoutes);
 app.use('/api', customerRoutes);
+app.use('/api/driver', driverRoutes);
+app.use('/api/media', mediaRoutes);
+// app.use('/api', reviewRoutes);
+app.use('/api/restaurant', restaurantRoutes);
+// app.get('/api/users', async (req, res) => {
+//   const users = await prisma.user.findMany();
+//   res.json(users);
+// });
 
 // Test Database Connection
 const testDB = async () => {
