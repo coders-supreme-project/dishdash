@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { promises } from 'dns';
 
+const DEFAULT_FOOD_IMAGE = 'path/to/default/image.jpg'; // Adjust the path as needed
 const API_BASE_URL = 'http://localhost:5000/api'; // Adjust port as needed
 
 const api = axios.create({
@@ -25,7 +25,7 @@ export const fetchCategories = async (all: boolean = false) => {
 };
 
 
-export const fetchRestaurants = async (all: boolean = false):Promise<any[]> => {
+  export const fetchRestaurants = async (all: boolean = false):Promise<[]> => {
   const response = await api.get('/restaurants', {
     params: {
       limit: all ? undefined : 3,
@@ -68,6 +68,7 @@ export const fetchRestaurantMenuByCategory = async (restaurantId: number) => {
 
 // Update or add these interfaces
 export interface MenuItem {
+ 
   id: number;
   name: string;
   price: number;
@@ -92,13 +93,17 @@ export interface Order {
   date: string;
   restaurant: string;
   customerId: number;
+  orderItems: {
+    menuItem: {
+      name: string;
+      price: number;
+      imageUrl?: string;
+    };
+    quantity: number;
+  }[];
 }
 
-export enum OrderStatus {
-  pending = 'pending',
-  completed = 'completed',
-  cancelled = 'cancelled'
-}
+export type OrderStatus = 'pending' | 'completed' | 'cancelled';
 
 // Add this helper function at the top
 const getAuthToken = () => {
@@ -118,7 +123,21 @@ export const fetchOrders = async () => {
       Authorization: `Bearer ${token}`
     }
   });
-  return response.data;
+
+  // Transform the response to get menu item names
+  const transformedOrders = response.data.map(order => ({
+    ...order,
+    items: order.orderItems.map(item => ({
+      id: item.menuItem.id,
+      name: item.menuItem.name,
+      price: Number(item.menuItem.price),
+      quantity: item.quantity,
+      image: item.menuItem.imageUrl || DEFAULT_FOOD_IMAGE,
+      menuItemId: item.menuItem.id
+    }))
+  }));
+
+  return transformedOrders;
 };
 
 // Update the createOrder function
@@ -142,33 +161,50 @@ export const createOrder = async (orderData: {
   
 
 
-export const updateOrderStatus = async (orderId: number, status: Order['status']) => {
-  const token = localStorage.getItem('token');
-  const response = await api.patch(`/orders/${orderId}/status`, { status }, {
-    headers: {
-      Authorization: `Bearer ${token}`
+export const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await api.patch(`/orders/${orderId}`, 
+    { status }, 
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
+  );
   return response.data;
 };
 
 export const deleteOrderItem = async (orderId: number, itemId: number) => {
-  const token = localStorage.getItem('token');
-  const response = await api.delete(`/orders/${orderId}/items/${itemId}`, {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  await api.delete(`/orders/${orderId}/items/${itemId}`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
-  return response.data;
 };
 
 export const updateOrderItem = async (orderId: number, itemId: number, quantity: number) => {
-  const token = localStorage.getItem('token');
-  const response = await api.patch(`/orders/${orderId}/items/${itemId}`, { quantity }, {
-    headers: {
-      Authorization: `Bearer ${token}`
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await api.patch(`/orders/${orderId}/items/${itemId}`, 
+    { quantity }, 
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     }
-  });
+  );
   return response.data;
 }; 
 

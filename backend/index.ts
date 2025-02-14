@@ -11,6 +11,7 @@ import categorieRoutes from './router/categorie.routes';
 import restaurantRoutes from './router/restaurant.routes';
 import customerRoutes from './router/customer.routes';
 import googleRoutes from './router/google.routes';
+import orderRoutes from './router/order.routes'; 
 
 dotenv.config(); // ✅ Load environment variables
 
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use('/api', categorieRoutes);
 // app.use('/api', reviewRoutes);
 app.use('/api', restaurantRoutes);
+app.use('/api', orderRoutes);
 // app.get('/api/users', async (req, res) => {
 //   const users = await prisma.user.findMany();
 //   res.json(users);

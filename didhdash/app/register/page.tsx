@@ -3,6 +3,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '@/context/page';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { GiKnifeFork } from 'react-icons/gi';
 
 const Register = () => {
   const authContext = useContext(AuthContext);
@@ -70,44 +71,46 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cover bg-center" style={{ backgroundImage: 'url("https://static.wixstatic.com/media/da0588_12bcab534add4215a707f22d870dea1c~mv2.jpg/v1/fill/w_325,h_243,q_90/da0588_12bcab534add4215a707f22d870dea1c~mv2.jpg")' }}>
-      <div className="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <h2 className="text-4xl font-bold text-center text-orange-600 mb-6">
-          Welcome to <span className="text-orange-700">Foodie</span>Hub
-        </h2>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
+      <div className="bg-white p-8 rounded-xl shadow-xl w-[480px] space-y-6">
+        <div className="text-center mb-6">
+          <GiKnifeFork className="text-5xl mx-auto text-orange-600 mb-4" />
+          <h2 className="text-3xl font-bold text-gray-800">Create Account</h2>
+          <p className="text-gray-600 text-sm mt-2">Join our restaurant community</p>
+        </div>
 
         {error && <p className="text-red-600 text-sm text-center mb-4">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input
               type="text"
               value={name}
+              placeholder="Full Name"
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              className="w-full p-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               value={email}
+              placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              className="w-full p-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
               value={password}
+              placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 
+              className={`w-full p-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 
                 ${passwordError ? 'border-red-500' : ''}`}
               required
             />
@@ -126,7 +129,7 @@ const Register = () => {
                   At least one number
                 </li>
                 <li className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? "text-green-500" : ""}>
-                  At least one special character (!@#$%^&*(),.?":{}|&lt;&gt;)
+                  At least one special character
                 </li>
               </ul>
             </div>
@@ -137,37 +140,37 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
             <input
               type="text"
               value={phoneNumber}
+              placeholder="Phone Number (Optional)"
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              className="w-full p-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address (Optional)</label>
             <input
               type="text"
               value={address}
+              placeholder="Address (Optional)"
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+              className="w-full p-3.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-orange-600 text-white p-4 rounded-lg font-semibold hover:bg-orange-700 transition"
+            className="w-full bg-orange-600 text-white p-3.5 rounded-lg font-semibold hover:bg-orange-700 transition-all duration-200 transform hover:scale-[1.02] mt-6"
           >
-            Register
+            Create Account
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="text-sm text-gray-600 text-center">
           Already have an account?{' '}
-          <Link href="/login" className="text-orange-600 hover:underline font-semibold">
-            Login here
+          <Link href="/login" className="text-orange-600 font-semibold hover:text-orange-700 hover:underline transition-all duration-200">
+            Sign in
           </Link>
         </p>
       </div>

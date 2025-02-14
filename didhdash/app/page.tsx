@@ -4,11 +4,12 @@ import { Bell, ChevronRight, CreditCard, MapPin, Search, Wallet, Home as HomeIco
 import Image from "next/image";
 
 import Link from 'next/link';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
 import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants, createOrder, fetchOrders } from "./services/api";
-import { useRouter } from 'next/navigation';
+import { AuthContext } from '../context/page'; // Add this line to import AuthContext
+import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
 
@@ -47,12 +48,14 @@ interface DecodedToken {
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showCategories = searchParams?.get('showCategories') === 'true';
   const [balance] = useState(12000);
   const [categories, setCategories] = useState<any[]>([]);
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewAllCategories, setViewAllCategories] = useState(false);
+  const [viewAllCategories, setViewAllCategories] = useState(showCategories);
   const [viewAllRestaurants, setViewAllRestaurants] = useState(false);
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -71,6 +74,9 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const authContext = useContext(AuthContext);
+  const isLoggedIn = authContext?.user != null;
 
   // Move loadData inside the component and implement it
   const loadData = async () => {
@@ -277,6 +283,7 @@ export default function Home() {
     try {
       setIsSubmitting(true);
       const restaurantId = cart[0]?.restaurantId;
+      
       if (!restaurantId) {
         alert('Invalid restaurant ID');
         return;
@@ -295,18 +302,21 @@ export default function Home() {
 
       const response = await createOrder(orderData);
       
-      if (response.success) {
+      // Check if response exists and has success property
+      if (response && response.success) {
         setCart([]);
-        await loadOrders(); // Reload orders after successful creation
         alert('Order placed successfully!');
         router.push('/food-order');
+      } else {
+        alert('Failed to create order. Please try again.');
       }
+
     } catch (error: any) {
       console.error('Error placing order:', error);
       if (error.response?.status === 401) {
         router.push('/login');
       } else {
-        alert('Failed to place order. Please try again.');
+        alert(error.response?.data?.error || 'Failed to place order. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -419,14 +429,23 @@ export default function Home() {
               <button className="p-2 hover:bg-gray-100 rounded-xl">
                 <Bell className="h-5 w-5 text-gray-600" />
               </button>
-              <div className="flex gap-2">
-                <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
-                  Login
-                </Link>
-                <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
-                  Register
-                </Link>
-              </div>
+              {!isLoggedIn ? (
+                <div className="flex gap-2">
+                  <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
+                    Login
+                  </Link>
+                  <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
+                    Register
+                  </Link>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => authContext?.logout()} 
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
 
