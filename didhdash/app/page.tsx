@@ -4,11 +4,13 @@ import { Bell, ChevronRight, CreditCard, MapPin, Search, Wallet, Home as HomeIco
 import Image from "next/image";
 
 import Link from 'next/link';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
 import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants } from "./services/api";
 import Career from "./career/page";
+import { AuthContext } from '@/context/page';
+
 
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
@@ -49,6 +51,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [isSearching, setIsSearching] = useState(false);
+
+  const authContext = useContext(AuthContext);
+  const isLoggedIn = authContext?.user != null;
 
   // Move loadData inside the component and implement it
   const loadData = async () => {
@@ -234,15 +239,23 @@ export default function Home() {
               <button className="p-2 hover:bg-gray-100 rounded-xl">
                 <Bell className="h-5 w-5 text-gray-600" />
               </button>
-              <div className="flex gap-2">
-                <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
-                  Login
-                </Link>
-                <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
-                  Register
-                </Link>
-                <Career/>
-              </div>
+              {!isLoggedIn ? (
+                <div className="flex gap-2">
+                  <Link href="/login" className="px-3 py-2 bg-blue-500 text-white rounded">
+                    Login
+                  </Link>
+                  <Link href="/register" className="px-3 py-2 bg-green-500 text-white rounded">
+                    Register
+                  </Link>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => authContext?.logout()} 
+                  className="px-3 py-2 bg-red-500 text-white rounded"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
 
