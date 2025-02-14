@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { promises } from 'dns';
 
 const API_BASE_URL = 'http://localhost:5000/api'; // Adjust port as needed
 
@@ -24,7 +25,7 @@ export const fetchCategories = async (all: boolean = false) => {
 };
 
 
-export const fetchRestaurants = async (all: boolean = false) => {
+export const fetchRestaurants = async (all: boolean = false):Promise<any[]> => {
   const response = await api.get('/restaurants', {
     params: {
       limit: all ? undefined : 3,
@@ -99,30 +100,38 @@ export enum OrderStatus {
   cancelled = 'cancelled'
 }
 
-// Update the fetch orders function
-export const fetchOrders = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await api.get<Order[]>('/orders', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    throw error;
-  }
+// Add this helper function at the top
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
 };
 
-// Update create order function
+// Update the fetchOrders function
+export const fetchOrders = async () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await api.get<Order[]>('/orders', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+// Update the createOrder function
 export const createOrder = async (orderData: {
   items: Array<{ id: number; quantity: number; price: number }>;
   totalAmount: number;
-  customerId: number;
   restaurantId: number;
 }) => {
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   const response = await api.post<{ success: boolean; order: Order }>('/orders', orderData, {
     headers: {
       Authorization: `Bearer ${token}`
@@ -130,6 +139,8 @@ export const createOrder = async (orderData: {
   });
   return response.data;
 };
+  
+
 
 export const updateOrderStatus = async (orderId: number, status: Order['status']) => {
   const token = localStorage.getItem('token');

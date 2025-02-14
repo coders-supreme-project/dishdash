@@ -98,27 +98,22 @@ export default function Home() {
     }
   };
 
-  const getUserIdFromToken = (): number => {
+  const getUserIdFromToken = () => {
+    if (typeof window === 'undefined') return null;
+    
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return 0;
-      }
-      const decoded = jwtDecode<DecodedToken>(token);
-      console.log('Decoded token:', decoded);
+      if (!token) return null;
       
+      const decoded = jwtDecode<DecodedToken>(token);
       return decoded.id;
-    
     } catch (error) {
       console.error('Error decoding token:', error);
-      router.push('/login');
-      return 0;
+      return null;
     }
   };
 
-  const userId = getUserIdFromToken();
-  console.log('User ID:', userId);
+ 
   
   // Update the initial useEffect to use the new loadData function
   useEffect(() => {
@@ -196,17 +191,25 @@ export default function Home() {
   }, [searchQuery, priceRange.min, priceRange.max]);
 
   // Add function to handle adding items to cart
-  const handleAddToCart = (item: any, type: 'menuItem' | 'restaurant') => {
+  const handleAddToCart = (item: MenuItem, type: 'menuItem' | 'restaurant') => {
     const newItem: CartItem = {
       id: item.id,
       name: item.name,
       price: Number(item.price),
       quantity: 1,
-      image: item.imageUrl || item.image,
+      imageUrl: item.imageUrl,
       restaurantId: type === 'menuItem' ? item.restaurantId : item.id
     };
 
     setCart(prevCart => {
+      // Check if adding item from different restaurant
+      if (prevCart.length > 0 && prevCart[0].restaurantId !== newItem.restaurantId) {
+        if (confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
+          return [newItem];
+        }
+        return prevCart;
+      }
+
       const existingItem = prevCart.find(cartItem => cartItem.id === newItem.id);
       
       if (existingItem) {
@@ -253,7 +256,7 @@ export default function Home() {
       setOrders(data);
     } catch (error) {
       console.error('Error loading orders:', error);
-      if (error.response?.status === 401) {
+      if ((error as any).response?.status === 401) {
         router.push('/login');
       }
     } finally {
@@ -265,14 +268,14 @@ export default function Home() {
   const handleCheckout = async () => {
     if (isSubmitting) return;
 
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      router.push('/login');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const userId = getUserIdFromToken();
-      if (!userId) {
-        router.push('/login');
-        return;
-      }
-
       const restaurantId = cart[0]?.restaurantId;
       if (!restaurantId) {
         alert('Invalid restaurant ID');
@@ -310,13 +313,13 @@ export default function Home() {
     }
   };
 
-  // Add this function to check token on component mount
+  // Update the auth check useEffect
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const userId = getUserIdFromToken();
+    if (!userId) {
       router.push('/login');
     }
-  }, [router]);
+  }, []);
 
   const handleNavClick = (navItem: string) => {
     setActiveNav(navItem);

@@ -1,24 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest, UserPayload } from '../controller/user'; // adjust path as needed
 
-interface AuthRequest extends Request {
-  user?: any;
-}
+export const authenticateJWT = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  console.log("authenticatetoken");
 
-export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No token provided' });
+  const authReq = req as AuthenticatedRequest;
+  const token = authReq.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = user;
+    if (!process.env.JWT_SECRET) {
+      res.status(500).json({ error: "JWT_SECRET is not defined" });
+      return;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
+    authReq.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: "Invalid token" });
+    return;
   }
-}; 
+};

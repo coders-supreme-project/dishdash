@@ -1,15 +1,21 @@
 import { PrismaClient, OrderStatus, PaymentStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import stripe from 'stripe';
-import { AuthenticatedRequest } from '../controller/user';  // Adjust path as needed
+import { AuthenticatedRequest } from '../controller/user'; // Adjust path as needed
 
 const DEFAULT_FOOD_IMAGE = 'https://via.placeholder.com/150';
 const prisma = new PrismaClient();
 const stripeClient = new stripe("sk_test_51Qrf6mKss9UqsuwKVf6SUPhV3hYE8aQzD424YODs5hjU967eKmBvsVWS20V1A631ZGJoFdxNGrqBSx5RmMQHs06l00ExuwFj9a");
 
-export const createOrder = async (req: Request, res: Response): Promise<void> => {
+export const createOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { items, totalAmount, customerId, restaurantId } = req.body;
+    const { items, totalAmount, restaurantId } = req.body;
+    const customerId = req.user?.id;
+
+    if (!customerId) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ error: 'Items must be a non-empty array' });
@@ -24,6 +30,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
         totalAmount: Number(totalAmount),
         status: OrderStatus.pending,
         paymentStatus: PaymentStatus.pending,
+        deliveryAddress: 'Default Address', // You might want to get this from user profile
       },
     });
 
@@ -41,7 +48,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     res.status(201).json({
       success: true,
-      order: { id: order.id },
+      order,
       message: 'Order created successfully',
     });
   } catch (error: any) {
@@ -50,47 +57,29 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const getOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const getOrders = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user) {
-      res.status(401).json({ error: "Authentication required" });
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.user) {
+      res.status(401).json({ error: 'Authentication required' });
       return;
     }
 
     const orders = await prisma.order.findMany({
       where: {
-        customerId: req.user.id
+        customerId: authReq.user.id,
       },
       include: {
         orderItems: {
           include: {
-            menuItem: true
-          }
+            menuItem: true,
+          },
         },
-        restaurant: true
+        restaurant: true,
       },
-      orderBy: {
-        createdAt: 'desc'
-      } as const
     });
 
-    // Transform the data to match frontend structure
-    const transformedOrders = orders.map(order => ({
-      id: order.id,
-      items: order.orderItems.map(item => ({
-        id: item.id,
-        name: item.menuItem.name,
-        price: item.priceAtTimeOfOrder,
-        quantity: item.quantity,
-        image: item.menuItem.imageUrl || DEFAULT_FOOD_IMAGE
-      })),
-      totalAmount: order.totalAmount,
-      status: order.status.toLowerCase(),
-      date: order.createdAt.toISOString().split('T')[0],
-      restaurant: order.restaurant.name
-    }));
-
-    res.json(transformedOrders);
+    res.json(orders);
   } catch (error: any) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: error.message });
@@ -129,13 +118,13 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
     }
 
     const [payment, order] = await Promise.all([
-      prisma.payment.updateMany({ // ✅ Fixed model name
+      prisma.payment.updateMany({
         where: { paymentIntentId },
-        data: { status: PaymentStatus.completed }, // ✅ Using enum
+        data: { status: PaymentStatus.completed },
       }),
       prisma.order.update({
         where: { id: orderId },
-        data: { status: OrderStatus.confirmed, paymentStatus: PaymentStatus.completed }, // ✅ Using enums
+        data: { status: OrderStatus.confirmed, paymentStatus: PaymentStatus.completed },
       }),
     ]);
 
@@ -158,7 +147,14 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
 
     const order = await prisma.order.update({
       where: { id: Number(orderId) },
-      data: { status: status as OrderStatus }
+      data: { status: status as OrderStatus },
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true, // Include related menuItem if needed
+          },
+        },
+      },
     });
 
     res.json(order);
@@ -175,8 +171,8 @@ export const deleteOrderItem = async (req: Request, res: Response): Promise<void
     await prisma.orderItem.delete({
       where: {
         id: Number(itemId),
-        orderId: Number(orderId)
-      }
+        orderId: Number(orderId),
+      },
     });
 
     res.json({ success: true });
