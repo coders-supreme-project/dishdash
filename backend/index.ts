@@ -9,11 +9,21 @@ import cookieParser from "cookie-parser";
 import categorieRoutes from './router/categorie.routes';
 import restaurantRoutes from './router/restaurant.routes';
 import customerRoutes from './router/customer.routes';
+import googleRoutes from './router/google.routes';
 
-// Load environment variables
-dotenv.config();
+dotenv.config(); // ✅ Load environment variables
 
 const app = express();
+app.use(helmet())
+app.use(cors());
+dotenv.config();
+app.use(express.json());
+app.use("/api/user", authRoutes);
+
+app.use('/api/auth', googleRoutes);
+
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
 const prisma = new PrismaClient();
 
 // Middleware
