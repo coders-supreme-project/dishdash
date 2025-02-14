@@ -50,6 +50,8 @@ model Restaurant {
   closingH         DateTime
   rating           Float     @default(0)
   restaurantOwnerId Int
+  restaurantRcId String      @unique
+
 
   // Relations
   restaurantOwner RestaurantOwner @relation(fields: [restaurantOwnerId], references: [id])

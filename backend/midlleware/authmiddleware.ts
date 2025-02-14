@@ -1,9 +1,16 @@
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest, UserPayload } from '../controller/user'; // Adjust the import path
-import { Response, NextFunction } from 'express';
-export const authenticateJWT = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+import { AuthenticatedRequest, UserPayload } from '../controller/user'; // adjust path as needed
 
+export const authenticateJWT = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  console.log("authenticatetoken");
+
+  const authReq = req as AuthenticatedRequest;
+  const token = authReq.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -16,7 +23,7 @@ export const authenticateJWT = async (req: AuthenticatedRequest, res: Response, 
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
-    req.user = decoded;
+    authReq.user = decoded;
     next();
   } catch (error) {
     res.status(401).json({ error: "Invalid token" });
