@@ -1,13 +1,13 @@
-// import express from "express";
-// import {} from "../controller/restaurentOwner.controller";
+import express from "express";
+import {createRestaurantOwner} from "../controller/restaurentOwner";
 
-// const router = express.Router();
+const router = express.Router();
 
 // // ✅ Restaurant Profile
 // router.put("/update-profile",  restaurantController.updateProfile);
 
 // // ✅ Restaurant Creation
-// router.post("/create",  restaurantController.createRestaurant);
+router.post("/create",  createRestaurantOwner);
 
 // // ✅ Menu Items Management
 // router.post("/menu-item",  restaurantController.createItem);
@@ -21,4 +21,4 @@
 // // ✅ Authentication & Logout
 // router.post("/logout", restaurantController.logOutResto);
 
-// export default router;
+export default router;
