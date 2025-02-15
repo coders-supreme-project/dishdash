@@ -51,6 +51,8 @@ async function main() {
           closingH: faker.date.future(),
           rating: parseFloat(faker.number.float({ min: 1, max: 5 }).toFixed(1)),
           restaurantOwnerId: owner.id,
+          restaurantRcId: faker.phone.number(),
+
         },
       })
     )

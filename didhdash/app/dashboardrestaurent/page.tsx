@@ -20,7 +20,7 @@ interface Category {
   name: string;
 }
 
-const DEFAULT_RESTAURANT_ID = 5;
+const DEFAULT_RESTAURANT_ID = 3;
 
 export default function Home() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function Home() {
   // ✅ Fetch Menu Items
   const fetchMenuItems = async () => {
     try {
-      const response = await axios.get<MenuItem[]>(`http://localhost:5000/api/restaurant-owner/menu/${DEFAULT_RESTAURANT_ID}`);
+      const response = await axios.get<MenuItem[]>(`http://localhost:3000/api/restaurant-owner/menu/${DEFAULT_RESTAURANT_ID}`);
       setMenuItems(response.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);
@@ -50,7 +50,7 @@ export default function Home() {
   // ✅ Fetch Categories
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<Category[]>("http://localhost:5000/api/categories");
+      const response = await axios.get<Category[]>("http://localhost:3000/api/categories");
       setCategories(response.data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -85,7 +85,7 @@ export default function Home() {
     if (!editingItem) return;
 
     try {
-      await axios.put(`http://localhost:5000/api/restaurant-owner/menu-item/${editingItem.id}`, editingItem);
+      await axios.put(`http://localhost:3000/api/restaurant-owner/menu-item/${editingItem.id}`, editingItem);
       setMenuItems((prevItems) => prevItems.map(item => item.id === editingItem.id ? editingItem : item));
       closeModal();
       alert("Item updated successfully!");
@@ -98,9 +98,9 @@ export default function Home() {
   // ✅ Delete Menu Item
   const handleDelete = async (itemId: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-
+  
     try {
-      await axios.delete(`http://localhost:5000/api/restaurant-owner/menu-item/${itemId}`);
+      await axios.delete(`http://localhost:3000/api/restaurant-owner/menu-item/${itemId}`);
       setMenuItems((prevItems) => prevItems.filter(item => item.id !== itemId));
       alert("Item deleted successfully!");
     } catch (error) {

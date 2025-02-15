@@ -8,7 +8,7 @@ const router = express.Router();
 router.put("/update-profile", restaurentOwner.updateProfile);
 
 // ✅ Restaurant Creation
-router.post("/create", restaurentOwner.createRestaurant);
+// router.post("/create", restaurentOwner.createRestaurant);
 
 // ✅ Menu Items Management
 router.post("/menu-item", restaurentOwner.createItem);

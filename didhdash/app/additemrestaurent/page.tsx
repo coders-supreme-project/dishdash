@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const DEFAULT_RESTAURANT_ID = 5; // Set default restaurant ID
+const DEFAULT_RESTAURANT_ID = 3; // Set default restaurant ID
 
 const MenuItemForm = () => {
   const router = useRouter();
@@ -20,7 +20,7 @@ const MenuItemForm = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/categories");
+        const response = await axios.get("http://localhost:3000/api/categories");
         setCategories(response.data);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
@@ -39,7 +39,7 @@ const MenuItemForm = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:5000/api/restaurant-owner/menu-item", {
+      const response = await axios.post("http://localhost:3000/api/restaurant-owner/menu-item", {
         restaurantId: DEFAULT_RESTAURANT_ID, // Use default ID
         name: formData.name,
         description: formData.description,

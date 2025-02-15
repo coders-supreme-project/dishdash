@@ -3,40 +3,120 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    email: string;
+    passwordHash: string;
+    role: string; // Assuming 'role' is a string
+    phoneNumber: string | null;
+    createdAt: Date;
+    balance: number;
+    updatedAt: Date;
+  };
+}
+
 const restaurantController = {
-getRestaurantOwnerById : async (req: Request, res: Response): Promise<void> => {
+  // ✅ Get Restaurant Owner by ID
+  getRestaurantOwnerById: async (req: Request, res: Response): Promise<void> => {
     const ownerId = Number(req.params.id);
-  
+
     if (isNaN(ownerId)) {
       res.status(400).json({ message: "Invalid restaurant owner ID" });
       return;
     }
-  
+
     try {
       const owner = await prisma.restaurantOwner.findUnique({
         where: { id: ownerId },
       });
-  
+
       if (!owner) {
         res.status(404).json({ message: "Restaurant owner not found" });
         return;
       }
-  
+
       res.json(owner);
     } catch (error) {
       console.error("Error fetching restaurant owner:", error);
       res.status(500).json({ message: "Server error" });
     }
   },
-  // ✅ Update Restaurant Profile
-  updateProfile: async (req: Request, res: Response) => {
-    const { name, cuisineType, address, contactNumber, openingH, closingH, rating } = req.body;
+
+  // ✅ Create Restaurant Owner
+  createRestaurantOwner: async (req: Request, res: Response): Promise<void> => {
+    const { firstName, lastName, userId } = req.body;
 
     try {
+      // Validate input data
+      if (!firstName || !lastName || !userId) {
+        res.status(400).json({ message: "All fields are required" });
+        return;
+      }
+
+      // Check if the user already exists
+      const existingUser = await prisma.restaurantOwner.findUnique({ where: { userId } });
+      if (existingUser) {
+        res.status(400).json({ message: "User already exists" });
+        return;
+      }
+
+      // Create the restaurant owner
+      const restOwner = await prisma.restaurantOwner.create({
+        data: {
+          firstName,
+          lastName,
+          userId: userId,
+        },
+      });
+
+      // Update the user's role to 'restaurantOwner'
+      await prisma.user.update({
+        where: { id: userId },
+        data: { role: 'restaurantOwner' },
+      });
+
+      res.status(201).json({
+        message: "Restaurant owner created successfully",
+        restaurantOwner: restOwner,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  // ✅ Update Restaurant Profile
+  updateProfile: async (req: Request, res: Response): Promise<void> => {
+    const { name, cuisineType, address, contactNumber, openingH, closingH, rating, firstName, lastName, email, password } = req.body;
+
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Unauthorized access" });
+        return;
+      }
+      //@ts-ignore
+      const userId = req.user.id;
+
+      // Check if email is already taken
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser && existingUser.id !== userId) {
+        res.status(400).json({ message: "Email is already taken by another user." });
+        return;
+      }
+
+      // Update restaurant owner
+      await prisma.restaurantOwner.update({
+        where: { userId },
+        data: { firstName, lastName },
+      });
+
+      // Update restaurant info
       await prisma.restaurant.updateMany({
-        where: { restaurantOwnerId: req.body.restaurantOwnerId },
+        where: { restaurantOwnerId: userId },
         data: { name, cuisineType, address, contactNumber, openingH, closingH, rating },
       });
+
       res.status(200).json({ message: "Profile updated successfully" });
     } catch (err) {
       console.error("Error:", err);
@@ -45,19 +125,7 @@ getRestaurantOwnerById : async (req: Request, res: Response): Promise<void> => {
   },
 
   // ✅ Create Restaurant
-  createRestaurant: async (req: Request, res: Response) => {
-    const { name, cuisineType, address, contactNumber, openingH, closingH, restaurantOwnerId } = req.body;
-    
-    try {
-      const newRestaurant = await prisma.restaurant.create({
-        data: { name, cuisineType, address, contactNumber, openingH, closingH, restaurantOwnerId },
-      });
-      res.status(201).json({ message: "Restaurant created successfully", newRestaurant });
-    } catch (err) {
-      console.error("Error creating restaurant:", err);
-      res.status(500).json({ error: "Failed to create restaurant" });
-    }
-  },
+  
 
   // ✅ Create Menu Item
   createItem: async (req: Request, res: Response) => {

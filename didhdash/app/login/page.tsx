@@ -26,15 +26,19 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
+  
     try {
-      const response = await axios.post("http://localhost:5000/api/user/login", {
+      const response = await axios.post("http://localhost:3000/api/user/login", {
         email,
         password
       });
-
+  
       if (response.status === 200 && response.data.token) {
-        await login(email, password);
+        // ✅ Save role and userId to local storage
+        localStorage.setItem('userId', response.data.userId);
+        localStorage.setItem('role', response.data.role);
+  
+        await login(email, password); // Continue with your existing login flow
         router.push('/');
       } else {
         setError('Invalid credentials');
@@ -44,10 +48,10 @@ const Login = () => {
       setError(err.response?.data?.message || 'Invalid email or password');
     }
   };
-
+  
   const handleGoogleLogin = async () => {
     try {
-      window.location.href = "http://localhost:5000/api/auth/google";
+      window.location.href = "http://localhost:3000/api/auth/google";
     } catch (err) {
       console.error("Google login failed:", err);
       setError('Failed to login with Google');

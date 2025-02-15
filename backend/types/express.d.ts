@@ -1,4 +1,6 @@
 import { User } from "@prisma/client";
+import { Request } from 'express';
+import { UserPayload } from '../types'; // Adjust path as needed
 
 declare global {
   namespace Express {
@@ -17,4 +19,8 @@ export interface AsyncRequestHandler {
 
 export interface ErrorRequestHandler {
   (err: any, req: Request, res: Response, next: NextFunction): void;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: UserPayload;
 } 

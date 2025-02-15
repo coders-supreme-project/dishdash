@@ -13,9 +13,9 @@ const router = Router();
 
 router.get('/restaurants/search', searchRestaurants);
 router.get('/restaurants', getAllRestaurants);
-router.post('/restaurants', createRestaurant);
-router.get('/restaurants/:id', getRestaurantById);
-router.put('/restaurants/:id', updateRestaurant);
+router.post('/create', createRestaurant);
+router.get('/:id', getRestaurantById);
+router.put('/:id', updateRestaurant);
 router.delete('/restaurants/:id', deleteRestaurant);
 router.get('/restaurants/:restaurantId/menu-categories', getRestaurantMenuByCategory);
 

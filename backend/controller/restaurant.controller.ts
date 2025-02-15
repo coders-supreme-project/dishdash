@@ -5,8 +5,10 @@ const prisma = new PrismaClient();
 
 // Create a new restaurant
 export const createRestaurant = async (req: Request, res: Response) => {
-  const { name, image, address, cuisineType, contactNumber, openingH, closingH, restaurantOwnerId } = req.body;
+  const { name, image, address, cuisineType, contactNumber, openingH, closingH, restaurantOwnerId,restaurantRcId } = req.body;
   try {
+    const formattedOpeningH = new Date(`1970-01-01T${openingH}:00.000Z`);
+    const formattedClosingH = new Date(`1970-01-01T${closingH}:00.000Z`);
     const restaurant = await prisma.restaurant.create({
       data: {
         name,
@@ -14,9 +16,10 @@ export const createRestaurant = async (req: Request, res: Response) => {
         address,
         cuisineType,
         contactNumber,
-        openingH: new Date(openingH),
-        closingH: new Date(closingH),
+        openingH:formattedOpeningH,
+        closingH: formattedClosingH,
         restaurantOwnerId,
+        restaurantRcId
       },
     });
     res.status(201).json(restaurant);
@@ -24,6 +27,8 @@ export const createRestaurant = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create restaurant' });
   }
 };
+
+
 
 // Get all restaurants
 export const getAllRestaurants = async (req: Request, res: Response) => {
