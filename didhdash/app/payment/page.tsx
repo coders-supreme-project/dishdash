@@ -4,12 +4,21 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { PaymentForm } from '../components/PaymentForm';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const clientSecret = searchParams?.get('clientSecret');
+  const [cartItems, setCartItems] = useState([]);
+
+  useEffect(() => {
+    const items = localStorage.getItem('cartItems');
+    if (items) {
+      setCartItems(JSON.parse(items));
+    }
+  }, []);
 
   if (!clientSecret) {
     return <div>Invalid payment session</div>;

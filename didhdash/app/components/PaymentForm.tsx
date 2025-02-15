@@ -6,9 +6,10 @@ import { confirmOrderPayment } from '../services/api';
 
 interface PaymentFormProps {
   clientSecret: string;
+  cartItems: Array<{ id: number; name: string; price: number; quantity: number }>;
 }
 
-export const PaymentForm = ({ clientSecret }: PaymentFormProps) => {
+export const PaymentForm = ({ clientSecret, cartItems }: PaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -48,6 +49,14 @@ export const PaymentForm = ({ clientSecret }: PaymentFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="p-4 border rounded-md">
         <CardElement />
+      </div>
+      <div>
+        <h3>Your Cart Items:</h3>
+        {cartItems.map(item => (
+          <div key={item.id}>
+            <span>{item.name} - ${item.price} x {item.quantity}</span>
+          </div>
+        ))}
       </div>
       <button 
         type="submit" 

@@ -88,8 +88,9 @@ export default function FoodOrder() {
 
   const handlePurchase = async (orderId: number) => {
     try {
-      await updateOrderStatus(orderId, 'completed' as OrderStatus);
-      loadOrders();
+      // Ensure 'completed' is a valid status in your OrderStatus enum
+      await updateOrderStatus(orderId, 'completed');
+      loadOrders(); // Refresh the orders list
     } catch (error) {
       console.error('Error completing order:', error);
     }

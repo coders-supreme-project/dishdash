@@ -169,22 +169,49 @@ export const createOrder = async (orderData: {
   
 
 
-export const updateOrderStatus = async (orderId: number, status: OrderStatus) => {
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await api.patch(`/orders/${orderId}`, 
-    { status }, 
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+export const updateOrderStatus = async (orderId: number, status: string) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
     }
-  );
-  return response.data;
-}
+
+    // Convert "completed" to "delivered" before sending to the backend
+    const convertStatus = (status: string) => {
+      if (status.toLowerCase() === "completed") return "delivered";
+      return status.toLowerCase();
+    };
+
+    const validStatuses = ["pending", "confirmed", "prepared", "out_for_delivery", "delivered"];
+    const normalizedStatus = convertStatus(status);
+
+    if (!validStatuses.includes(normalizedStatus)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    console.log('Sending request with:', { orderId, status: normalizedStatus });
+
+    const response = await api.patch(
+      '/orders/update-status',
+      { orderId, status: normalizedStatus },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Order status updated successfully:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error updating order status:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+
 
 // Add these payment functions
 export const createPaymentIntent = async (orderId: number) => {

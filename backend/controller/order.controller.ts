@@ -160,27 +160,85 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
 
 export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId } = req.params;
-    const { status } = req.body;
+    const authReq = req as AuthenticatedRequest;
 
-    const order = await prisma.order.update({
+    if (!authReq.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const { orderId, status } = req.body;
+    console.log('Received request body:', req.body);
+
+    // Validate request payload
+    if (!orderId || isNaN(Number(orderId))) {
+      res.status(400).json({ error: 'Invalid orderId' });
+      return;
+    }
+    if (!status) {
+      res.status(400).json({ error: 'Status is required' });
+      return;
+    }
+
+    // Ensure status is lowercase & valid
+    const validStatuses = ["pending", "confirmed", "prepared", "out_for_delivery", "delivered"];
+    const normalizedStatus = status.toLowerCase();
+
+    if (!validStatuses.includes(normalizedStatus)) {
+      res.status(400).json({ error: `Invalid status value. Expected one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
+    // Fetch user & customer info
+    const user = await prisma.user.findUnique({ 
+      where: { id: authReq.user.id },
+      include: { customer: true },
+    });
+
+    if (!user || !user.customer) {
+      res.status(404).json({ error: 'Customer not found' });
+      return;
+    }
+
+    // Fetch order
+    const order = await prisma.order.findUnique({
       where: { id: Number(orderId) },
-      data: { status: status as OrderStatus },
+    });
+
+    if (!order) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    if (order.customerId !== user.customer.id) {
+      res.status(403).json({ error: 'You are not authorized to update this order' });
+      return;
+    }
+
+    // Update order
+    const updatedOrder = await prisma.order.update({
+      where: { id: Number(orderId) },
+      data: {
+        status: normalizedStatus as OrderStatus,
+        paymentStatus: PaymentStatus.completed,
+      },
       include: {
         orderItems: {
           include: {
-            menuItem: true, // Include related menuItem if needed
+            menuItem: true,
           },
         },
       },
     });
 
-    res.json(order);
+    console.log('Order updated successfully:', updatedOrder);
+    res.json(updatedOrder);
   } catch (error: any) {
     console.error('Error updating order status:', error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 export const deleteOrderItem = async (req: Request, res: Response): Promise<void> => {
   try {
