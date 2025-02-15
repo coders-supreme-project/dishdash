@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const DEFAULT_FOOD_IMAGE = 'path/to/default/image.jpg'; // Adjust the path as needed
-const API_BASE_URL = 'http://localhost:3000/api'; // Adjust port as needed
+const API_BASE_URL = 'http://localhost:3005/api'; // Match your backend port
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,7 +12,7 @@ const api = axios.create({
 
 export const fetchCategories = async (all: boolean = false) => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/api/categories/', {
+    const response = await api.get('categories', {
       params: {
         limit: all ? undefined : 6
       }
@@ -24,15 +24,19 @@ export const fetchCategories = async (all: boolean = false) => {
   }
 };
 
-
-  export const fetchRestaurants = async (all: boolean = false):Promise<[]> => {
-  const response = await api.get('/restaurants', {
-    params: {
-      limit: all ? undefined : 3,
-      include: 'categories,menuItems'
-    }
-  });
-  return response.data;
+export const fetchRestaurants = async (all: boolean = false) => {
+  try {
+    const response = await api.get('/restaurants', {
+      params: {
+        limit: all ? undefined : 6,
+        include: 'categories'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching restaurants:', error);
+    return [];
+  }
 };
 
 export const searchRestaurants = async (params: { 
@@ -68,7 +72,6 @@ export const fetchRestaurantMenuByCategory = async (restaurantId: number) => {
 
 // Update or add these interfaces
 export interface MenuItem {
- 
   id: number;
   name: string;
   price: number;
@@ -78,29 +81,21 @@ export interface MenuItem {
 
 export interface OrderItem {
   id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
   menuItemId: number;
+  quantity: number;
+  price: number;
+  name: string;
+  image?: string;
 }
 
 export interface Order {
   id: number;
   items: OrderItem[];
-  totalAmount: number;
+  totalAmount: number | string | { toFixed: (n: number) => string };
   status: OrderStatus;
   date: string;
-  restaurant: string;
+  restaurant: string | number;
   customerId: number;
-  orderItems: {
-    menuItem: {
-      name: string;
-      price: number;
-      imageUrl?: string;
-    };
-    quantity: number;
-  }[];
 }
 
 export type OrderStatus = 'pending' | 'completed' | 'cancelled';
@@ -127,6 +122,7 @@ export const fetchOrders = async () => {
   // Transform the response to get menu item names
   const transformedOrders = response.data.map(order => ({
     ...order,
+    //@ts-ignore
     items: order.orderItems.map(item => ({
       id: item.menuItem.id,
       name: item.menuItem.name,
@@ -134,7 +130,8 @@ export const fetchOrders = async () => {
       quantity: item.quantity,
       image: item.menuItem.imageUrl || DEFAULT_FOOD_IMAGE,
       menuItemId: item.menuItem.id
-    }))
+    })),
+    totalAmount: Number(order.totalAmount) // Convert Decimal to Number
   }));
 
   return transformedOrders;
@@ -142,16 +139,27 @@ export const fetchOrders = async () => {
 
 // Update the createOrder function
 export const createOrder = async (orderData: {
-  items: Array<{ id: number; quantity: number; price: number }>;
+  items: Array<{
+    menuItemId: number;
+    quantity: number;
+    price: number;
+  }>;
   totalAmount: number;
-  restaurantId: number;
+  restaurant: number;
+  status: string;
+  paymentStatus: string;
+  deliveryAddress: string;
 }) => {
   const token = getAuthToken();
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  const response = await api.post<{ success: boolean; order: Order }>('/orders', orderData, {
+  const response = await api.post<{
+    success: boolean;
+    order: Order;
+    clientSecret: string;
+  }>('/orders', orderData, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -169,6 +177,41 @@ export const updateOrderStatus = async (orderId: number, status: OrderStatus) =>
 
   const response = await api.patch(`/orders/${orderId}`, 
     { status }, 
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+  return response.data;
+}
+
+// Add these payment functions
+export const createPaymentIntent = async (orderId: number) => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await api.post('/orders/payment-intent', 
+    { orderId },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+  return response.data;
+};
+
+export const confirmOrderPayment = async (paymentIntentId: string) => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const response = await api.post('/orders/confirm-payment',
+    { paymentIntentId },
     {
       headers: {
         Authorization: `Bearer ${token}`
@@ -206,5 +249,4 @@ export const updateOrderItem = async (orderId: number, itemId: number, quantity:
     }
   );
   return response.data;
-}; 
-
+};

@@ -137,16 +137,6 @@ export default function FoodOrder() {
       date: new Date().toISOString().split('T')[0],
       restaurant: newOrder.restaurant,
       customerId: userId,
-      orderItems: [
-        {
-          menuItem: {
-            name: newOrder.name,
-            price: newOrder.price,
-            imageUrl: DEFAULT_FOOD_IMAGE,
-          },
-          quantity: 1,
-        }
-      ]
     };
 
     setOrders(prev => [...prev, newOrderItem]);
