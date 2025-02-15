@@ -1,7 +1,7 @@
 // driverRoutes.js
 import { Router, RequestHandler, Response, NextFunction } from 'express';
 import { registerDriver, fetchData, verifyDriver } from '../controller/driverController';
-import { authenticateJWT } from '../midlleware/authmiddleware';
+import { authenticateJWT } from '../middleware/authMiddleware';
 import { AuthenticatedRequest } from '../types';
 
 // Add this helper type

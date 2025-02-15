@@ -18,28 +18,44 @@ dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
+app.use(helmet())
+app.use(cors());
+dotenv.config();
+app.use(express.json());
+app.use("/api/user", authRoutes);
 
-// Consolidate middleware setup
+app.use('/api/auth', googleRoutes);
+
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+
+const prisma = new PrismaClient();
+
+// Middleware
 app.use(helmet());
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
+app.use(cors({ 
+  origin: 'http://localhost:3000', 
+  credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+// app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
-// Remove duplicate middleware and route declarations
-app.use("/api/user", authRoutes);
-app.use('/api/auth', googleRoutes);
 app.use('/api/owner', restaurantOwnerRoutes);
+
+// Routes
+app.use("/api/user", authRoutes);
 app.use('/api', categorieRoutes);
 app.use('/api', restaurantRoutes);
-app.use('/api/customers', customerRoutes);
+app.use('/api', customerRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
-
-const prisma = new PrismaClient();
+// app.use('/api', reviewRoutes);
+app.use('/api/restaurant', restaurantRoutes);
+// app.get('/api/users', async (req, res) => {
+//   const users = await prisma.user.findMany();
+//   res.json(users);
+// });
 
 // Test Database Connection
 const testDB = async () => {
@@ -52,23 +68,23 @@ const testDB = async () => {
   }
 };
 
-// Start server with error handling
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+// ✅ Run Test on Server Start
+testDB();
+const PORT = process.env.PORT || 3001;
+// ✅ Routes
+// app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
+
+// ✅ Start Server
+app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  testDB();
-}).on('error', (err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+  testDB(); // Test DB connection after server starts
 });
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  server.close(async () => {
-    await prisma.$disconnect();
-    console.log("🛑 Server stopped and Prisma disconnected");
-    process.exit(0);
-  });
+  await prisma.$disconnect();
+  console.log("🛑 Prisma disconnected");
+  process.exit();
 });
 
 export default app;
