@@ -14,20 +14,21 @@ import driverRoutes from './router/driverRoutes';
 import customerRoutes from './router/customer.routes';
 import mediaRoutes from './router/media.controller';
 import googleRoutes from './router/google.routes';
+import orderRoutes from './router/order.routes'; 
 
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
-app.use(helmet())
 app.use(cors());
+app.use(helmet())
+app.use(cors({ origin: "http://localhost:3001", credentials: true }));
 dotenv.config();
 app.use(express.json());
 app.use("/api/user", authRoutes);
 
 app.use('/api/auth', googleRoutes);
 
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 const prisma = new PrismaClient();
 
@@ -42,7 +43,8 @@ app.use('/api', categorieRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
 // app.use('/api', reviewRoutes);
-app.use('/api/restaurant', restaurantRoutes);
+app.use('/api/restaurent', restaurantRoutes);
+app.use('/api', orderRoutes);
 // app.get('/api/users', async (req, res) => {
 //   const users = await prisma.user.findMany();
 //   res.json(users);

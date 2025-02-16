@@ -28,26 +28,39 @@ const Login = () => {
     setError(null);
   
     try {
-      const response = await axios.post("http://localhost:3000/api/user/login", {
-        email,
-        password
-      });
+      const response = await axios.post("http://localhost:3000/api/user/login", { email, password });
   
       if (response.status === 200 && response.data.token) {
-        // ✅ Save role and userId to local storage
-        localStorage.setItem('userId', response.data.userId);
-        localStorage.setItem('role', response.data.role);
+        await login(email, password);
+        
+        const user = response.data.user;
+        const userRole = user?.role || user?.customer?.role;
   
-        await login(email, password); // Continue with your existing login flow
-        router.push('/');
+        // Redirect user based on role
+        switch (userRole) {
+          case "customer":
+            router.push("/");
+            break;
+          case "restaurantOwner":
+            router.push("/dashboardrestaurent");
+            break;
+          case "driver":
+            router.push("/dashboarddriver");
+            break;
+          default:
+            router.push("/");
+            break;
+        }
       } else {
-        setError('Invalid credentials');
+        setError("Invalid credentials");
       }
     } catch (err: any) {
       console.error("Login failed:", err);
-      setError(err.response?.data?.message || 'Invalid email or password');
+      setError(err.response?.data?.message || "Invalid email or password");
     }
   };
+  
+  
   
   const handleGoogleLogin = async () => {
     try {

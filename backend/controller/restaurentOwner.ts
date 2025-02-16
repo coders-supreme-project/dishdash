@@ -1,7 +1,17 @@
-import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+import { v2 as cloudinary } from "cloudinary";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+cloudinary.config({
+  cloud_name: "drliudydx",
+  api_key: "516363278445275",
+  api_secret: "dj-hWW7JRK0AYtEqiIXUUcWKuK8",
+});
 
 const prisma = new PrismaClient();
+
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -15,7 +25,15 @@ interface AuthenticatedRequest extends Request {
     updatedAt: Date;
   };
 }
-
+const uploadImage = async (filePath: string): Promise<string> => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath);
+    return result.secure_url; // Returns Cloudinary image URL
+  } catch (error) {
+    throw new Error("Image upload failed");
+  }
+};
+ 
 const restaurantController = {
   // ✅ Get Restaurant Owner by ID
   getRestaurantOwnerById: async (req: Request, res: Response): Promise<void> => {
@@ -41,6 +59,25 @@ const restaurantController = {
       console.error("Error fetching restaurant owner:", error);
       res.status(500).json({ message: "Server error" });
     }
+  },
+  signCloudinary : (req: Request, res: Response) => {
+    const { timestamp } = req.body;
+    const secret = "dj-hWW7JRK0AYtEqiIXUUcWKuK8";
+  
+    if (!secret) {
+      return res.status(500).json({ error: "Cloudinary secret is missing" });
+    }
+  
+    const signature = crypto
+      .createHash("sha1")
+      .update(`timestamp=${timestamp} ${secret}`)
+      .digest("hex");
+  
+    res.json({
+      signature,
+      timestamp,
+      apiKey: "516363278445275",
+    });
   },
 
   // ✅ Create Restaurant Owner
@@ -128,45 +165,54 @@ const restaurantController = {
   
 
   // ✅ Create Menu Item
-  createItem: async (req: Request, res: Response) => {
-    const { restaurantId, name, description, price, imageUrl, isAvailable, categoryId } = req.body;
+  // ✅ Create Menu Item (updated)
+createItem: async (req: Request, res: Response) => {
+  const { restaurantId, name, description, price, isAvailable, categoryId, imageUrl } = req.body;
+  
+  try {
+    const newItem = await prisma.menuItem.create({
+      data: {
+        restaurantId: Number(restaurantId),
+        name,
+        description,
+        price: Number(price),
+        imageUrl: imageUrl || "", // Use the imageUrl from request body
+        isAvailable: isAvailable === "true",
+        categoryId: categoryId ? Number(categoryId) : null,
+      },
+    });
 
-    try {
-      const newItem = await prisma.menuItem.create({
-        data: {
-          restaurantId: Number(restaurantId),
-          name,
-          description,
-          price: Number(price),
-          imageUrl,
-          isAvailable: isAvailable === "true",
-          categoryId: categoryId ? Number(categoryId) : null,
-        },
-      });
-
-      res.status(201).json({ message: "Menu item created successfully", newItem });
-    } catch (err) {
-      console.error("Error creating menu item:", err);
-      res.status(500).json({ error: "Failed to create menu item" });
-    }
-  },
+    res.status(201).json({ message: "Menu item created successfully", newItem });
+  } catch (err) {
+    console.error("Error creating menu item:", err);
+    res.status(500).json({ error: "Failed to create menu item" });
+  }
+},
 
   // ✅ Update Menu Item
-  updateItem: async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
+  // ✅ Update Menu Item (modified to handle imageUrl)
+updateItem: async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, description, price, imageUrl, isAvailable, categoryId } = req.body;
 
-    try {
-      const updatedItem = await prisma.menuItem.update({
-        where: { id: Number(id) },
-        data: { name, description, price: Number(price), imageUrl, isAvailable: Boolean(isAvailable), categoryId: categoryId ? Number(categoryId) : null },
-      });
-      res.status(200).json({ message: "Menu item updated successfully", updatedItem });
-    } catch (err) {
-      console.error("Error updating menu item:", err);
-      res.status(500).json({ error: "Failed to update menu item" });
-    }
-  },
+  try {
+    const updatedItem = await prisma.menuItem.update({
+      where: { id: Number(id) },
+      data: { 
+        name, 
+        description, 
+        price: Number(price), 
+        imageUrl,  // Now properly receives Cloudinary URL
+        isAvailable: Boolean(isAvailable), 
+        categoryId: categoryId ? Number(categoryId) : null 
+      },
+    });
+    res.status(200).json({ message: "Menu item updated successfully", updatedItem });
+  } catch (err) {
+    console.error("Error updating menu item:", err);
+    res.status(500).json({ error: "Failed to update menu item" });
+  }
+},
 
   // ✅ Delete Menu Item
   deleteItem: async (req: Request, res: Response) => {
@@ -192,6 +238,7 @@ const restaurantController = {
       res.status(500).json({ error: "Failed to retrieve menu items" });
     }
   },
+ 
 };
 
 export default restaurantController;

@@ -7,10 +7,14 @@ import Link from 'next/link';
 import { useState, useEffect, useContext } from "react";
 import "../styles/style.css";
 import "../styles/globals.css";
-import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants } from "./services/api";
+import { fetchCategories, fetchRestaurants, fetchMenuItemsByCategory, fetchRestaurantMenuByCategory, searchRestaurants, createOrder, fetchOrders } from "./services/api";
+import { AuthContext } from '../context/page'; // Add this line to import AuthContext
+import { useRouter, useSearchParams } from 'next/navigation';
+import { jwtDecode } from "jwt-decode";
+import { MenuItem, Order, OrderStatus } from './services/api';
+
 import Career from "./career/page";
-import { AuthContext } from '@/context/page';
-import { useRouter } from 'next/navigation';
+
 
 
 const orderMenu = [
@@ -34,17 +38,28 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
 const DEFAULT_PROFILE = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop";
 
+// Add interface for cart item
+interface CartItem extends MenuItem {
+  quantity: number;
+}
+
+// Add this interface near the top with other interfaces
+interface DecodedToken {
+  id: number;
+  email: string;
+  role: string;
+}
+
 export default function Home() {
-   const router = useRouter();
-   const handleProfileClick = () => {
-    router.push("/dashboardrestaurent"); // Redirect to dashboard
-  };
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showCategories = searchParams?.get('showCategories') === 'true';
   const [balance] = useState(12000);
   const [categories, setCategories] = useState<any[]>([]);
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewAllCategories, setViewAllCategories] = useState(false);
+  const [viewAllCategories, setViewAllCategories] = useState(showCategories);
   const [viewAllRestaurants, setViewAllRestaurants] = useState(false);
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -56,6 +71,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [isSearching, setIsSearching] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [userBalance, setUserBalance] = useState(12000); // Replace static balance
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const authContext = useContext(AuthContext);
   const isLoggedIn = authContext?.user != null;
@@ -80,12 +102,30 @@ export default function Home() {
         time: "30 mins"
       })));
     } catch (error) {
-      console.error('Error loading data:', error);
+      throw error; 
+
     } finally {
       setLoading(false);
     }
   };
 
+  const getUserIdFromToken = () => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      
+      const decoded = jwtDecode<DecodedToken>(token);
+      return decoded.id;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+ 
+  
   // Update the initial useEffect to use the new loadData function
   useEffect(() => {
     loadData();
@@ -161,6 +201,157 @@ export default function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, priceRange.min, priceRange.max]);
 
+  // Add function to handle adding items to cart
+  const handleAddToCart = (item: MenuItem, type: 'menuItem' | 'restaurant') => {
+    const newItem: CartItem = {
+      id: item.id,
+      name: item.name,
+      price: Number(item.price),
+      quantity: 1,
+      imageUrl: item.imageUrl,
+      restaurantId: type === 'menuItem' ? item.restaurantId : item.id
+    };
+
+    setCart(prevCart => {
+      // Check if adding item from different restaurant
+      if (prevCart.length > 0 && prevCart[0].restaurantId !== newItem.restaurantId) {
+        if (confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
+          return [newItem];
+        }
+        return prevCart;
+      }
+
+      const existingItem = prevCart.find(cartItem => cartItem.id === newItem.id);
+      
+      if (existingItem) {
+        return prevCart.map(cartItem =>
+          cartItem.id === newItem.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
+      }
+      
+      return [...prevCart, newItem];
+    });
+  };
+
+  // Add function to remove items from cart
+  const handleRemoveFromCart = (itemId: number) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === itemId);
+      
+      if (existingItem && existingItem.quantity > 1) {
+        return prevCart.map(item =>
+          item.id === itemId
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
+      }
+      
+      return prevCart.filter(item => item.id !== itemId);
+    });
+  };
+
+  // Calculate total amount whenever cart changes
+  useEffect(() => {
+    const serviceCharge = 1.00;
+    const itemsTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    setTotalAmount(itemsTotal + serviceCharge);
+  }, [cart]);
+
+  // Add this function to load orders
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchOrders();
+      setOrders(data);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      if ((error as any).response?.status === 401) {
+        router.push('/login');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update handleCheckout function
+  const handleCheckout = async () => {
+    if (isSubmitting) return;
+
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const restaurantId = cart[0]?.restaurantId;
+      
+      if (!restaurantId) {
+        alert('Invalid restaurant ID');
+        return;
+      }
+
+      const orderData = {
+        items: cart.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalAmount,
+        customerId: userId,
+        restaurantId
+      };
+
+      const response = await createOrder(orderData);
+      
+      // Check if response exists and has success property
+      if (response && response.success) {
+        setCart([]);
+        alert('Order placed successfully!');
+        router.push('/food-order');
+      } else {
+        alert('Failed to create order. Please try again.');
+      }
+
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      if (error.response?.status === 401) {
+        router.push('/login');
+      } else {
+        alert(error.response?.data?.error || 'Failed to place order. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update the auth check useEffect
+  useEffect(() => {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      router.push('/login');
+    }
+  }, []);
+
+  const handleNavClick = (navItem: string) => {
+    setActiveNav(navItem);
+    if (navItem === 'Food Order') {
+      router.push('/food-order');
+    } else if (navItem === 'Dashboard') {
+      // Reset all states to initial values
+      setSelectedCategory(null);
+      setSelectedRestaurant(null);
+      setViewAllCategories(false);
+      setViewAllRestaurants(false);
+      setSearchQuery('');
+      setPriceRange({ min: '', max: '' });
+      loadData(); // Reload initial data
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -185,7 +376,7 @@ export default function Home() {
               <button
                 key={item.name}
                 className={`nav-item ${activeNav === item.name ? 'active' : ''}`}
-                onClick={() => setActiveNav(item.name)}
+                onClick={() => handleNavClick(item.name)}
               >
                 {item.icon}
                 <span>{item.name}</span>
@@ -206,7 +397,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold" >Hello, Patricia</h1>
+              <h1 className="text-2xl font-semibold">Hello, Patricia</h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-4">
@@ -262,7 +453,6 @@ export default function Home() {
                 </button>
               )}
             </div>
-            <button onClick={handleProfileClick}>Go to Dashboard</button>
           </div>
 
           {/* Banner */}
@@ -278,7 +468,6 @@ export default function Home() {
               alt="Banner"
              
               className="rounded-full absolute right-6 top-1/2 -translate-y-1/2"
-              
             />
           </div>
 
@@ -348,7 +537,12 @@ export default function Home() {
                             <div className="font-medium text-yellow">
                               ${Number(item.price).toFixed(2)}
                             </div>
-                            <button className="add-btn">+</button>
+                            <button 
+                              className="add-btn"
+                              onClick={() => handleAddToCart(item, 'menuItem')}
+                            >
+                              +
+                            </button>
                           </div>
                           {item.restaurant && (
                             <div className="text-sm text-gray-500 mt-2">
@@ -499,8 +693,13 @@ export default function Home() {
                                 <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="font-medium text-yellow">${item.price}</div>
-                                <button className="add-btn">+</button>
+                                <div className="font-medium text-yellow">${Number(item.price).toFixed(2)}</div>
+                                <button 
+                                  className="add-btn"
+                                  onClick={() => handleAddToCart(item, 'menuItem')}
+                                >
+                                  +
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -517,8 +716,7 @@ export default function Home() {
         {/* Right Sidebar */}
         <div className="w-[300px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold">Your Balance</h2>
-            
+            <h2 className="font-semibold">Your Balance</h2> < Career/>
             <Image
               src={DEFAULT_PROFILE}
               alt="Profile"
@@ -564,16 +762,26 @@ export default function Home() {
           <div>
             <h3 className="font-semibold mb-4">Order Menu</h3>
             <div className="space-y-4 mb-6">
-              {orderMenu.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
+              {cart.map((item) => (
+                <div key={item.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="text-2xl">{item.icon}</div>
+                    <div className="text-2xl">🍽️</div>
                     <div>
                       <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-gray-500">x1</div>
+                      <div className="text-sm text-gray-500">x{item.quantity}</div>
                     </div>
                   </div>
-                  <div className="dish-price">+${item.price}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="dish-price">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                    <button 
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => handleRemoveFromCart(item.id)}
+                    >
+                      -
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -585,7 +793,7 @@ export default function Home() {
               </div>
               <div className="flex justify-between font-semibold">
                 <div>Total</div>
-                <div className="dish-price">$202.00</div>
+                <div className="dish-price">${totalAmount.toFixed(2)}</div>
               </div>
             </div>
 
@@ -597,8 +805,12 @@ export default function Home() {
               <ChevronRight className="h-4 w-4" />
             </button>
 
-            <button className="checkout-btn">
-              Checkout
+            <button 
+              className={`checkout-btn ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || isSubmitting}
+            >
+              {isSubmitting ? 'Processing...' : 'Checkout'}
             </button>
           </div>
         </div>
