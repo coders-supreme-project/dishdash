@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^4.0.0",
     "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
+    "@react-google-maps/api": "^2.20.6",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.0.6",
     "@types/js-cookie": "^3.0.6",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/estree": "^1.0.6",
+    "@types/google.maps": "^3.58.1",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.17.17",
     "@types/react": "^19.0.8",

@@ -172,5 +172,44 @@ export const fetchData = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+export const getDriverLocation = async (req: Request, res: Response): Promise<void> => {
+  const { driverId } = req.params;
 
-module.exports = { registerDriver, verifyDriver, fetchData };
+  try {
+    // Fetch the latest location for the driver
+    const location = await prisma.geoLocation.findFirst({
+      where: { driverId: parseInt(driverId) },
+      orderBy: { createdAt: 'desc' }, 
+    });
+
+    if (!location) {
+      res.status(404).json({ message: 'Location not found' });
+    }
+
+    res.status(200).json(location);
+  } catch (error) {
+    console.error('Error fetching driver location:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const updateDriverLocation = async (req: Request, res: Response) => {
+  const { driverId, latitude, longitude } = req.body;
+
+  try {
+    // Create a new GeoLocation entry for the driver
+    const location = await prisma.geoLocation.create({
+      data: {
+        latitude,
+        longitude,
+        driverId,
+      },
+    });
+
+    res.status(200).json(location);
+  } catch (error) {
+    console.error('Error updating driver location:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { registerDriver, verifyDriver, fetchData,getDriverLocation,updateDriverLocation };

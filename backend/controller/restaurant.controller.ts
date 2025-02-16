@@ -190,3 +190,27 @@ export const getRestaurantMenuByCategory = async (req: Request, res: Response) =
     res.status(500).json({ error: 'Failed to fetch restaurant menu' });
   }
 };
+export const getRestaurantsLocation = async (req: Request, res: Response) => {
+  try {
+    // Fetch restaurants with their geolocation data
+    const restaurants = await prisma.restaurant.findMany({
+      include: {
+        geoLocation: true, // Include the associated geolocation data
+      },
+    });
+
+    // Transform the data to include only necessary fields
+    const formattedRestaurants = restaurants.map((restaurant) => ({
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      latitude: restaurant.geoLocation?.[0]?.latitude,
+      longitude: restaurant.geoLocation?.[0]?.longitude,
+    }));
+
+    res.status(200).json(formattedRestaurants);
+  } catch (error) {
+    console.error('Error fetching restaurants:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

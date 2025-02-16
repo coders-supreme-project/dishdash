@@ -111,12 +111,20 @@ const Login = () => {
           Sign in
         </button>
 
-        <p className="text-sm text-gray-600 text-center">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-orange-600 font-semibold hover:text-orange-700 hover:underline transition-all duration-200">
+        <div className="flex justify-between text-sm text-gray-600">
+          <Link 
+            href="/register" 
+            className="text-orange-600 font-semibold hover:text-orange-700 hover:underline transition-all duration-200"
+          >
             Create an account
           </Link>
-        </p>
+          <Link 
+            href="/reset-password" 
+            className="text-orange-600 font-semibold hover:text-orange-700 hover:underline transition-all duration-200"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </form>
     </div>
   );

@@ -1,25 +1,15 @@
 // driverRoutes.js
-import { Router, RequestHandler, Response, NextFunction } from 'express';
-import { registerDriver, fetchData, verifyDriver } from '../controller/driverController';
-import { authenticateJWT } from '../middleware/authMiddleware';
-import { AuthenticatedRequest } from '../types';
+import { Router } from 'express';
+import { registerDriver, fetchData, verifyDriver,getDriverLocation,updateDriverLocation } from '../controller/driverController';
 
-// Add this helper type
-type AuthenticatedRequestHandler = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => Promise<void> | void;
-
-// Add this wrapper function
-// const authenticatedRoute = (handler: AuthenticatedRequestHandler): RequestHandler => {
-//   return (req, res, next) => handler(req as AuthenticatedRequest, res, next);
-// };
 
 const DriverRouter = Router();
 
 DriverRouter.post('/register', registerDriver);
 DriverRouter.post('/verifyDriver', verifyDriver);
 DriverRouter.post('/dashboard', fetchData);
+DriverRouter.get('/location/:driverId', getDriverLocation);
+DriverRouter.post('/location/', updateDriverLocation);
+
 
 export default DriverRouter;

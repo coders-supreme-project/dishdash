@@ -16,6 +16,8 @@ model User {
   createdAt    DateTime @default(now())
   balance      Float    @default(0)
   updatedAt    DateTime @default(now()) @updatedAt
+  resetToken       String?  // Stores reset token
+  resetTokenExpiry DateTime? // Token expiry time
 
   // Relations
   customer        Customer?
@@ -162,12 +164,14 @@ model Category {
 }
 
 model GeoLocation {
-  id           Int   @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   latitude     Float
   longitude    Float
   customerId   Int?
   restaurantId Int?
   driverId     Int?
+  createdAt    DateTime @default(now()) // Automatically set when the record is created
+  updatedAt    DateTime @updatedAt      // Automatically updated when the record is modified
 
   // Relationships
   customer   Customer?   @relation(fields: [customerId], references: [id])
