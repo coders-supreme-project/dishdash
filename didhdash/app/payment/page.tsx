@@ -30,8 +30,7 @@ export default function PaymentPage() {
       <Elements stripe={stripePromise} options={{ clientSecret }}>
         <PaymentForm 
           clientSecret={clientSecret} 
-          onSuccess={() => console.log('Payment successful')} 
-          onError={(error) => console.error('Payment error', error)} 
+          cartItems={cartItems}
         />
       </Elements>
     </div>
