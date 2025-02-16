@@ -12,15 +12,16 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
-    // Update the URL to match your Express backend route
-    const backendResponse = await fetch('http://localhost:5000/api/customers/profile', {
+    // Make sure to forward the token with 'Bearer ' prefix if not present
+    const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+
+    const backendResponse = await fetch('http://localhost:3001/api/customers/profile', {
       method: 'PUT',
       headers: {
-        'Authorization': token,
+        'Authorization': authToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
-      cache: 'no-store', // Disable caching
     });
 
     if (!backendResponse.ok) {
@@ -34,7 +35,10 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Profile update error:', error);
     return NextResponse.json(
-      { error: 'Failed to update profile', details: error.message },
+      { 
+        error: 'Failed to update profile', 
+        details: error.message 
+      },
       { status: 500 }
     );
   }

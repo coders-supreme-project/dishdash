@@ -25,17 +25,18 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
   }));
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit
-        alert('Image size should be less than 1MB');
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Image size should be less than 5MB');
         return;
       }
 
@@ -52,33 +53,54 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const updateData: CustomerProfile = {
-      ...formData,
-      ...Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value !== '')
-      ),
-    };
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to update your profile');
+      return;
+    }
 
     try {
-      const updatedProfile = await onSubmit(updateData);
+      const response = await fetch('/api/customer/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const updatedProfile = await response.json();
       
+      // Update the local state with the new data
+      setFormData(prevData => ({
+        ...prevData,
+        ...updatedProfile.customer,
+        email: updatedProfile.email || prevData.email,
+        phoneNumber: updatedProfile.phoneNumber || prevData.phoneNumber
+      }));
+
       // Update the AuthContext with the new user data
-      if (authContext?.updateUserData && updatedProfile) {
+      if (authContext) {
         const updatedUserData = {
           ...authContext.user,
-          email: updateData.email || authContext.user.email,
-          phoneNumber: updateData.phoneNumber || authContext.user.phoneNumber,
+          email: updatedProfile.email || authContext.user.email,
+          phoneNumber: updatedProfile.phoneNumber || authContext.user.phoneNumber,
           customer: {
             ...authContext.user.customer,
-            firstName: updateData.firstName || authContext.user.customer?.firstName,
-            lastName: updateData.lastName || authContext.user.customer?.lastName,
-            deliveryAddress: updateData.deliveryAddress || authContext.user.customer?.deliveryAddress,
-            imageUrl: updateData.imageUrl || authContext.user.customer?.imageUrl,
+            ...updatedProfile.customer
           }
         };
+        
+        // Update the context and localStorage
         authContext.updateUserData(updatedUserData);
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
       }
-      
+
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -108,9 +130,15 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
             </div>
             <label
               htmlFor="image-upload"
-              className="absolute bottom-0 right-0 p-2 bg-yellow rounded-full cursor-pointer hover:bg-yellow/90 transition"
+              className={`absolute bottom-0 right-0 p-2 bg-yellow rounded-full cursor-pointer hover:bg-yellow/90 transition ${
+                isImageUploading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              <Camera className="w-4 h-4 text-white" />
+              {isImageUploading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4 text-white" />
+              )}
             </label>
             <input
               type="file"
@@ -118,6 +146,7 @@ export default function CustomerProfileForm({ onSubmit, isLoading }: CustomerPro
               accept="image/*"
               onChange={handleImageChange}
               className="hidden"
+              disabled={isImageUploading}
             />
           </div>
           <h3 className="text-xl font-semibold mb-1">

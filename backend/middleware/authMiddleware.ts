@@ -1,43 +1,58 @@
 // authmiddleware.ts
 import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserPayload } from '../controller/user';
-import {Request, Response, NextFunction } from 'express';
- import dotenv from 'dotenv';
- dotenv.config();
- const JWT_SECRET = process.env.JWT_SECRET || '';
-export const authenticateJWT = async (
-  req: Request, // Use AuthenticatedRequest here
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+
+dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET || '';
+
+// Rename the interface to avoid conflict
+interface RequestWithUser extends Request {
+  user?: UserPayload;
+}
+
+const prisma = new PrismaClient();
+
+export const authenticateJWT = async (req: RequestWithUser, res: any, next: any) => {
   try {
-    const authHeader = req.header('Authorization');
-    console.log('Auth header received:', authHeader);
+    const authHeader = req.headers.authorization;
 
-    const token = authHeader?.replace('Bearer ', '');
-    if (!token) {
-      console.log('No token found in request');
-      res.status(401).json({ error: "No token provided" });
-      return;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No token provided' });
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET not found in environment');
-      res.status(500).json({ error: "Server configuration error" });
-      return;
+    const token = authHeader.split(' ')[1]; // Remove 'Bearer ' prefix
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined');
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
-      console.log('Token decoded successfully:', decoded);
-      req.user = decoded; // Set the user property on the request object
-      next();
-    } catch (jwtError) {
-      console.error('JWT verification failed:', jwtError);
-      res.status(401).json({ error: "Invalid token" });
+    const decoded = jwt.verify(token, secret) as UserPayload;
+    
+    // Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: {
+        customer: true,
+        restaurantOwner: true,
+        driver: true
+      }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
     }
+
+    req.user = decoded;
+    next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(500).json({ error: "Authentication error" });
+    console.error('Authentication error:', error);
+    return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+// Export the type for use in other files
+export type { RequestWithUser };

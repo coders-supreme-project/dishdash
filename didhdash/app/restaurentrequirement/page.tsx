@@ -67,7 +67,7 @@ export default function Home() {
 
       // Register the restaurant owner
       const ownerResponse = await axios.post(
-        'http://localhost:3000/api/owner/create',
+        'http://localhost:3001/api/owner/create',
         {
           firstName: user.customer.firstName, // Use value from user
           lastName: user.customer.lastName || " ", // Use value from user
@@ -79,7 +79,7 @@ export default function Home() {
 
       // Register the restaurant
       const restaurantResponse = await axios.post(
-        'http://localhost:3000/api/restaurant/create',
+        'http://localhost:3001/api/restaurant/create',
         {
           name: values.restaurantName,
           image: values.image,
@@ -100,7 +100,7 @@ export default function Home() {
       formDataMedia.append('idCard', values.idCard);
       formDataMedia.append('restaurantId', restaurantResponse.data.id);
 
-      await axios.post('http://localhost:3000/api/media/create', formDataMedia);
+      await axios.post('http://localhost:3001/api/media/create', formDataMedia);
 
       console.log('Registration successful');
 

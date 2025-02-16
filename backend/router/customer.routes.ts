@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { updateCustomerProfile } from '../controller/customer.controller';
-import { authenticateJWT } from '../midlleware/authmiddleware';
+import { authenticateJWT } from '../middleware/authMiddleware';
+
 
 const router = Router();
 
-// Update route to match the frontend request path
+// Add authenticateJWT middleware to protect the route
 router.put('/profile', authenticateJWT, updateCustomerProfile);
 
 export default router;

@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("http://localhost:5000/api/user/login", { email, password });
+      const response = await axios.post("http://localhost:3001/api/user/login", { email, password });
       const { token, user } = response.data;
       
       setToken(token);
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (name: string, email: string, password: string, phoneNumber?: string, address?: string) => {
     try {
-      await axios.post("http://localhost:5000/api/user/register", { name, email, password, phoneNumber, address });
+      await axios.post("http://localhost:3001/api/user/register", { name, email, password, phoneNumber, address });
       router.push("/login");
     } catch (error: any) {
       console.error("Registration failed", error.response?.data || error.message);
@@ -70,6 +70,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateUserData = (userData: any) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    
+    // If you have a token, make sure it's still valid
+    const token = localStorage.getItem("token");
+    if (token) {
+      setToken(token);
+    }
   };
 
   return (

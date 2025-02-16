@@ -46,7 +46,7 @@ export default function CustomerProfilePage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/customers/profile', {
+      const response = await fetch('http://localhost:3001/api/customers/profile', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

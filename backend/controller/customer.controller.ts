@@ -1,6 +1,7 @@
 import { Response, Request } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from './user';
+import cloudinary from '../config/cloudinary';
 const prisma = new PrismaClient();
 
 export const updateCustomerProfile = async (req: Request, res: Response): Promise<void> => {
@@ -27,12 +28,31 @@ export const updateCustomerProfile = async (req: Request, res: Response): Promis
       return;
     }
 
+    // Handle image upload to Cloudinary if imageUrl is a base64 string
+    let cloudinaryUrl = undefined;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(imageUrl, {
+          folder: 'customer-profiles',
+          transformation: [
+            { width: 300, height: 300, crop: 'fill' },
+            { quality: 'auto' }
+          ]
+        });
+        cloudinaryUrl = uploadResponse.secure_url;
+      } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        res.status(500).json({ error: 'Failed to upload image' });
+        return;
+      }
+    }
+
     // Prepare the update data
     const updateData: any = {
       firstName: firstName || undefined,
       lastName: lastName || undefined,
       deliveryAddress: deliveryAddress || undefined,
-      imageUrl: imageUrl || undefined,
+      imageUrl: cloudinaryUrl || undefined,
       user: {
         update: {
           email: email || undefined,

@@ -28,7 +28,7 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/user/login", {
+      const response = await axios.post("http://localhost:3001/api/user/login", {
         email,
         password
       });
@@ -47,7 +47,7 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      window.location.href = "http://localhost:5000/api/auth/google";
+      window.location.href = "http://localhost:3001/api/auth/google";
     } catch (err) {
       console.error("Google login failed:", err);
       setError('Failed to login with Google');
