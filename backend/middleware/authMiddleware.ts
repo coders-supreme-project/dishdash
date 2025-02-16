@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthenticatedRequest, UserPayload } from '../controller/user'; // adjust path as needed
-
+interface Decoded{
+  id:number,
+  role:string
+}
 export const authenticateJWT = async (
   req: Request,
   res: Response,
@@ -22,8 +25,8 @@ export const authenticateJWT = async (
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
-    authReq.user = decoded;
+    const decoded:Decoded= jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
+    req.user = decoded;
     next();
   } catch (error) {
     res.status(401).json({ error: "Invalid token" });
