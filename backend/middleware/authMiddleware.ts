@@ -1,12 +1,16 @@
 // authmiddleware.ts
 import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
-import { AuthenticatedRequest, UserPayload } from '../controller/user';
-import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-
-dotenv.config();
-const JWT_SECRET = process.env.JWT_SECRET || '';
+import { AuthenticatedRequest, UserPayload } from '../controller/user'; // adjust path as needed
+interface Decoded{
+  id:number,
+  role:string
+}
+export const authenticateJWT = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  console.log("authenticatetoken");
 
 // Rename the interface to avoid conflict
 interface RequestWithUser extends Request {
@@ -23,29 +27,7 @@ export const authenticateJWT = async (req: RequestWithUser, res: any, next: any)
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const token = authHeader.split(' ')[1]; // Remove 'Bearer ' prefix
-    const secret = process.env.JWT_SECRET;
-
-    if (!secret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-
-    const decoded = jwt.verify(token, secret) as UserPayload;
-    
-    // Verify user exists in database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      include: {
-        customer: true,
-        restaurantOwner: true,
-        driver: true
-      }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-
+    const decoded:Decoded= jwt.verify(token, process.env.JWT_SECRET) as UserPayload;
     req.user = decoded;
     next();
   } catch (error) {

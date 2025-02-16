@@ -1,14 +1,53 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+
+cloudinary.config({
+  cloud_name: "drliudydx",
+  api_key: "516363278445275",
+  api_secret: "dj-hWW7JRK0AYtEqiIXUUcWKuK8",
+});
+
 
 const prisma = new PrismaClient();
+const uploadImage = async (filePath: string): Promise<string> => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath);
+    return result.secure_url; // Returns Cloudinary image URL
+  } catch (error) {
+    throw new Error("Image upload failed");
+  }
+};
+export const signCloudinary = (req: Request, res: Response) => {
+  const { timestamp } = req.body;
+  const secret = "dj-hWW7JRK0AYtEqiIXUUcWKuK8";
+
+  if (!secret) {
+    return res.status(500).json({ error: "Cloudinary secret is missing" });
+  }
+
+  const signature = crypto
+    .createHash("sha1")
+    .update(`timestamp=${timestamp} ${secret}`)
+    .digest("hex");
+
+  res.json({
+    signature,
+    timestamp,
+    apiKey: "516363278445275",
+  });
+};
+
 
 // Create a new restaurant
+
 export const createRestaurant = async (req: Request, res: Response) => {
   const { name, image, address, cuisineType, contactNumber, openingH, closingH, restaurantOwnerId,restaurantRcId } = req.body;
+
   try {
-    const formattedOpeningH = new Date(`1970-01-01T${openingH}:00.000Z`);
-    const formattedClosingH = new Date(`1970-01-01T${closingH}:00.000Z`);
     const restaurant = await prisma.restaurant.create({
       data: {
         name,
@@ -16,9 +55,11 @@ export const createRestaurant = async (req: Request, res: Response) => {
         address,
         cuisineType,
         contactNumber,
-        openingH:formattedOpeningH,
-        closingH: formattedClosingH,
-        restaurantOwnerId,
+        openingH: new Date(openingH),
+        closingH: new Date(closingH),
+        restaurantOwner: {
+          connect: { id: restaurantOwnerId }
+        },
         restaurantRcId
       },
     });
@@ -28,17 +69,18 @@ export const createRestaurant = async (req: Request, res: Response) => {
   }
 };
 
+
+
 // Get all restaurants
 export const getAllRestaurants = async (req: Request, res: Response) => {
-  const { limit } = req.query;
+  const { ownerId } = req.query; // Add ownerId filter
+
   try {
     const restaurants = await prisma.restaurant.findMany({
-      take: limit ? Number(limit) : undefined,
+      where: ownerId ? { restaurantOwnerId: Number(ownerId) } : undefined,
       include: {
         menuItems: {
-          include: {
-            category: true,
-          }
+          include: { category: true }
         },
         geoLocation: true,
         media: true,
@@ -49,7 +91,6 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch restaurants' });
   }
 };
-
 // Get a restaurant by ID
 export const getRestaurantById = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -60,6 +101,7 @@ export const getRestaurantById = async (req: Request, res: Response) => {
         menuItems: true,
         geoLocation: true,
         media: true,
+        
       },
     });
     if (restaurant) {
@@ -75,8 +117,18 @@ export const getRestaurantById = async (req: Request, res: Response) => {
 // Update a restaurant
 export const updateRestaurant = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, image, address, cuisineType, contactNumber, openingH, closingH } = req.body;
+  const { name, address, cuisineType, contactNumber, openingH, closingH } = req.body;
+  let image = req.body.image;
+
   try {
+    //@ts-ignore
+    if (req.file) {
+          //@ts-ignore
+
+      const uploadedImage = await cloudinary.uploader.upload(req.file.path);
+      image = uploadedImage.secure_url;
+    }
+
     const restaurant = await prisma.restaurant.update({
       where: { id: Number(id) },
       data: {
@@ -89,13 +141,13 @@ export const updateRestaurant = async (req: Request, res: Response) => {
         closingH: new Date(closingH),
       },
     });
+
     res.status(200).json(restaurant);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update restaurant' });
+    console.error("Error updating restaurant:", error);
+    res.status(500).json({ error: "Failed to update restaurant" });
   }
 };
-
-// Delete a restaurant
 export const deleteRestaurant = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
@@ -189,4 +241,23 @@ export const getRestaurantMenuByCategory = async (req: Request, res: Response) =
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch restaurant menu' });
   }
-}
+};
+
+// Add this function to get the restaurant ID by owner ID
+export const getRestaurantIdByOwnerId = async (req: Request, res: Response) => {
+  const { ownerId } = req.params;
+  try {
+    const restaurant = await prisma.restaurant.findFirst({
+      where: { restaurantOwnerId: Number(ownerId) },
+      select: { id: true },
+    });
+
+    if (restaurant) {
+      res.status(200).json({ restaurantId: restaurant.id });
+    } else {
+      res.status(404).json({ error: 'Restaurant not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch restaurant ID' });
+  }
+};

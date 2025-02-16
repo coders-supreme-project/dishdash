@@ -26,7 +26,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
+  
     try {
       const response = await axios.post("http://localhost:3001/api/user/login", {
         email,
@@ -35,16 +35,36 @@ const Login = () => {
 
       if (response.status === 200 && response.data.token) {
         await login(email, password);
-        router.push('/');
+        
+        const user = response.data.user;
+        const userRole = user?.role || user?.customer?.role;
+  
+        // Redirect user based on role
+        switch (userRole) {
+          case "customer":
+            router.push("/");
+            break;
+          case "restaurantOwner":
+            router.push("/dashboardrestaurent");
+            break;
+          case "driver":
+            router.push("/dashboarddriver");
+            break;
+          default:
+            router.push("/");
+            break;
+        }
       } else {
-        setError('Invalid credentials');
+        setError("Invalid credentials");
       }
     } catch (err: any) {
       console.error("Login failed:", err);
-      setError(err.response?.data?.message || 'Invalid email or password');
+      setError(err.response?.data?.message || "Invalid email or password");
     }
   };
-
+  
+  
+  
   const handleGoogleLogin = async () => {
     try {
       window.location.href = "http://localhost:3001/api/auth/google";

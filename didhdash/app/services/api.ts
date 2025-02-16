@@ -128,11 +128,13 @@ export const fetchOrders = async () => {
   const transformedOrders = response.data.map(order => ({
     ...order,
     items: order.orderItems.map(item => ({
+      //@ts-ignore
       id: item.menuItem.id,
       name: item.menuItem.name,
       price: Number(item.menuItem.price),
       quantity: item.quantity,
       image: item.menuItem.imageUrl || DEFAULT_FOOD_IMAGE,
+      //@ts-ignore
       menuItemId: item.menuItem.id
     }))
   }));
