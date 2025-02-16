@@ -5,7 +5,8 @@ import {
   updateOrderStatus, 
   deleteOrderItem,
  
-  confirmPayment 
+  confirmPayment,
+  createPaymentIntent
 } from '../controller/order.controller';
 import { authenticateJWT } from '../middleware/authMiddleware';
 
@@ -19,5 +20,7 @@ router.patch('/orders/:orderId', authenticateJWT, updateOrderStatus);
 router.delete('/orders/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
 
 router.post('/orders/confirm-payment', authenticateJWT, confirmPayment);
+
+router.post('/orders/payment-intent', authenticateJWT, createPaymentIntent);
 
 export default router;

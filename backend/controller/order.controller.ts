@@ -257,3 +257,41 @@ export const deleteOrderItem = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: error.message });
   }
 };
+
+export const createPaymentIntent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.body;
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.user) {
+      res.status(401).json({ error: 'User not authenticated' });
+      return;
+    }
+
+    // Find the order
+    const order = await prisma.order.findUnique({
+      where: { id: Number(orderId) },
+      include: { orderItems: true }
+    });
+
+    if (!order) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    // Create payment intent
+    const paymentIntent = await stripeClient.paymentIntents.create({
+      amount: Math.round(Number(order.totalAmount) * 100), // Convert to cents
+      currency: 'usd',
+      metadata: { orderId: order.id.toString() }
+    });
+
+    res.json({ 
+      success: true,
+      clientSecret: paymentIntent.client_secret
+    });
+  } catch (error: any) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
