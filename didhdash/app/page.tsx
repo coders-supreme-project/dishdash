@@ -12,7 +12,7 @@ import { AuthContext } from '../context/page'; // Add this line to import AuthCo
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
-
+import Swal from 'sweetalert2';
 import Career from "./career/page";
 import { ItemDetailsModal } from './components/ItemDetailsModal';
 
@@ -232,9 +232,19 @@ export default function Home() {
     setCart(prevCart => {
       // Check if adding item from different restaurant
       if (prevCart.length > 0 && prevCart[0].restaurantId !== newItem.restaurantId) {
-        if (confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
-          return [newItem];
-        }
+        Swal.fire({
+          title: 'Different Restaurant',
+          text: 'Adding items from a different restaurant will clear your current cart. Continue?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ffc107',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, clear cart'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setCart([newItem]);
+          }
+        });
         return prevCart;
       }
 
@@ -325,7 +335,13 @@ export default function Home() {
       
       if (response && response.success) {
         setCart([]);
-        alert('Order placed successfully!');
+          Swal.fire({
+                      title: 'Success!',
+                      text: 'Order placed successfully!',
+                      icon: 'success',
+                      confirmButtonColor: '#ffc107'
+                    });
+        // alert('Order placed successfully!');
         router.push('/food-order');
       } else {
         alert('Failed to create order. Please try again.');
@@ -380,11 +396,39 @@ export default function Home() {
   // Add this function to handle all orders purchase
   const handlePurchaseAll = () => {
     if (cart.length === 0) {
-      alert('Your cart is empty');
+      Swal.fire({
+        title: 'Empty Cart',
+        text: 'Your cart is empty!',
+        icon: 'warning',
+        confirmButtonColor: '#ffc107'
+      });
       return;
     }
 
-    handleCheckout();
+    Swal.fire({
+      title: 'Processing Purchase',
+      text: 'Please wait while we process your order...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    handleCheckout().then(() => {
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your order has been placed successfully!',
+        icon: 'success',
+        confirmButtonColor: '#ffc107'
+      });
+    }).catch((error) => {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Failed to process your order',
+        icon: 'error',
+        confirmButtonColor: '#ffc107'
+      });
+    });
   };
 
   if (loading) {

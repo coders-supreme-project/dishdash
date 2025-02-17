@@ -10,6 +10,7 @@ import type { Order } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import Swal from 'sweetalert2';
 
 
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
@@ -112,7 +113,13 @@ export default function FoodOrder() {
       router.push(`/payment/${orderId}?clientSecret=${clientSecret}`);
     } catch (error: any) {
       console.error('Error processing payment:', error);
-      alert(error.message || 'Failed to process payment');
+      Swal.fire({
+        title: 'No Orders',
+        text: 'Failed to process payment',
+        icon: 'info',
+        confirmButtonColor: '#ffc107'
+      });
+    
     }
   };
 
@@ -161,7 +168,7 @@ export default function FoodOrder() {
     };
 
     setOrders(prev => [...prev, newOrderItem]);
-    setShowAddModal(false);
+    setShowAddModal(false)
     setNewOrder({ name: '', price: 0, restaurant: '' });
 
     // Trigger the display of categories in the Home component
@@ -172,19 +179,46 @@ export default function FoodOrder() {
     const pendingOrders = orders.filter(order => order.status === 'pending');
     
     if (pendingOrders.length === 0) {
-      alert('No pending orders to purchase');
+      Swal.fire({
+        title: 'No Orders',
+        text: 'No pending orders to purchase',
+        icon: 'info',
+        confirmButtonColor: '#ffc107'
+      });
       return;
     }
 
     try {
+      // Show loading state
+      Swal.fire({
+        title: 'Processing Orders',
+        text: 'Please wait while we process your orders...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
       // Purchase all pending orders
       for (const order of pendingOrders) {
         await handlePurchase(order.id);
       }
-      alert('All orders purchased successfully!');
+
+      // Show success message
+      Swal.fire({
+        title: 'Success!',
+        text: 'All orders purchased successfully!',
+        icon: 'success',
+        confirmButtonColor: '#ffc107'
+      });
     } catch (error) {
       console.error('Error purchasing orders:', error);
-      alert('Failed to purchase some orders');
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to purchase some orders',
+        icon: 'error',
+        confirmButtonColor: '#ffc107'
+      });
     }
   };
 
@@ -296,6 +330,7 @@ export default function FoodOrder() {
                             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
                             onClick={() => handleOrderQuantity(order.id, item.id, 'decrease')}
                           >
+                            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                             -
                           </button>
                           <span className="font-medium w-8 text-center">{item.quantity}</span>
