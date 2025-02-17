@@ -12,7 +12,7 @@ const api = axios.create({
 
 export const fetchCategories = async (all: boolean = false) => {
   try {
-    const response = await axios.get('http://localhost:3000/api/categories/', {
+    const response = await axios.get('http://localhost:3000/api/categories', {
       params: {
         limit: all ? undefined : 6
       }
@@ -26,7 +26,7 @@ export const fetchCategories = async (all: boolean = false) => {
 
 
   export const fetchRestaurants = async (all: boolean = false):Promise<[]> => {
-  const response = await api.get('/restaurants', {
+  const response = await api.get('http://localhost:3000/api/restaurent/restaurants', {
     params: {
       limit: all ? undefined : 3,
       include: 'categories,menuItems'
@@ -45,7 +45,7 @@ export const searchRestaurants = async (params: {
     Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
   );
   
-  const response = await api.get('/restaurants/search', { 
+  const response = await api.get('http://localhost:3000/api/restaurent/restaurants/search', { 
     params: cleanParams
   });
   return response.data;
@@ -53,7 +53,7 @@ export const searchRestaurants = async (params: {
 
 export const fetchMenuItemsByCategory = async (categoryId: number) => {
   try {
-    const response = await api.get(`/categories/${categoryId}/menu-items`);
+    const response = await api.get(`http://localhost:3000/categories/${categoryId}/menu-items`);
     return response.data;
   } catch (error) {
     console.error('Error fetching menu items:', error);
@@ -62,7 +62,7 @@ export const fetchMenuItemsByCategory = async (categoryId: number) => {
 };
 
 export const fetchRestaurantMenuByCategory = async (restaurantId: number) => {
-  const response = await api.get(`/restaurants/${restaurantId}/menu-categories`);
+  const response = await api.get(`http://localhost:3000/restaurent/${restaurantId}/menu-categories`);
   return response.data;
 };
 

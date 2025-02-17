@@ -31,25 +31,21 @@ export default function Home() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
 
+  
+  
   useEffect(() => {
     const storedId = localStorage.getItem("restaurantId");
     if (storedId) {
-      console.log("Restaurant ID from localStorage:", storedId);
+      console.log("✅ Restaurant ID from localStorage:", storedId);
       setRestaurantId(Number(storedId));
+      fetchMenuItems(storedId);
     }
   }, []);
   
 
-  useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-  }, []);
-
-  // ✅ Fetch Menu Items
-  const fetchMenuItems = async () => {
-    if (!restaurantId) return;
+  const fetchMenuItems = async (id: string) => {
     try {
-      const response = await axios.get<MenuItem[]>(`http://localhost:3000/api/restaurant-owner/menu/${restaurantId}`);
+      const response = await axios.get(`http://localhost:3000/api/restaurant-owner/menu/${id}`);
       setMenuItems(response.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);

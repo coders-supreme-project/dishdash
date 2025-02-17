@@ -20,11 +20,13 @@ const MenuItemForm = () => {
   const [previewImage, setPreviewImage] = useState<string>("");
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
 
-useEffect(() => {
-  const storedId = localStorage.getItem("restaurantId");
-  if (storedId) setRestaurantId(Number(storedId));
-}, []);
-
+  useEffect(() => {
+    const storedId = localStorage.getItem("restaurantId");
+    if (storedId) {
+      console.log("✅ Restaurant ID from localStorage:", storedId);
+      setRestaurantId(Number(storedId));
+    }
+  }, []);
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -52,8 +54,11 @@ useEffect(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitFormData = new FormData();
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      console.error("❌ No restaurant ID found, cannot add item.");
+      return;
+    }
+  
     try {
       let imageUrl = "";
       if (imageFile) {
@@ -68,7 +73,6 @@ useEffect(() => {
         imageUrl = uploadResponse.data.secure_url;
       }
   
-      // Convert FormData to JSON
       const payload = {
         restaurantId: restaurantId,
         name: formData.name,
@@ -76,17 +80,17 @@ useEffect(() => {
         price: formData.price,
         isAvailable: formData.isAvailable,
         categoryId: formData.categoryId || null,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
       };
   
       await axios.post("http://localhost:3000/api/restaurant-owner/menu-item", payload, {
         headers: { "Content-Type": "application/json" },
       });
   
-      alert("Item created successfully!");
-      router.push("/dashboardrestaurent");
+      alert("✅ Item created successfully!");
+      router.push(`/dashboardrestaurent/${restaurantId}`);
     } catch (err) {
-      console.error("Error creating item:", err);
+      console.error("❌ Error creating item:", err);
       alert("Failed to create item. Check console for details.");
     }
   };

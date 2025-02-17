@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
 
 export default function SomeComponent() {
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [socketMessage, setSocketMessage] = useState<string>("");
 
   useEffect(() => {
     const fetchRestaurantId = async () => {
@@ -19,11 +21,33 @@ export default function SomeComponent() {
     };
 
     fetchRestaurantId();
+
+    // Connect to the WebSocket server
+    const socket = io("http://localhost:3000");
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server");
+
+      // Emit an example event
+      socket.emit("exampleEvent", { data: "Hello from client!" });
+    });
+
+    // Listen for a response from the server
+    socket.on("exampleResponse", (data) => {
+      console.log("Received exampleResponse:", data);
+      setSocketMessage(data.message);
+    });
+
+    // Clean up the socket connection on component unmount
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (
     <div>
       {restaurantId ? <p>Restaurant ID: {restaurantId}</p> : <p>Loading...</p>}
+      <p>Socket Message: {socketMessage}</p>
     </div>
   );
 } 

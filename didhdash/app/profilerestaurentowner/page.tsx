@@ -25,26 +25,28 @@ export default function ProfilePage() {
 
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
 
-useEffect(() => {
-  const storedId = localStorage.getItem("restaurantId");
-  if (storedId) setRestaurantId(Number(storedId));
-}, []);
-  const fetchRestaurantProfile = async () => {
-    if (!restaurantId) return;
-    
-    try {
-      const response = await axios.get<Restaurant>(
-        `http://localhost:3000/api/restaurent/${restaurantId}`
-      );
-      setRestaurant(response.data);
-      setUpdatedRestaurant(response.data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  useEffect(() => {
+    const fetchRestaurantProfile = async () => {
+      const storedId = localStorage.getItem("restaurantId");
+      if (!storedId) {
+        console.error("❌ No restaurant ID found in localStorage.");
+        return;
+      }
+  
+      try {
+        const response = await axios.get(`http://localhost:3000/api/restaurent/${storedId}`);
+        setRestaurant(response.data);
+        setUpdatedRestaurant(response.data);
+      } catch (error) {
+        console.error("❌ Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchRestaurantProfile();
+  }, []);
+  
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setImageFile(e.target.files[0]);

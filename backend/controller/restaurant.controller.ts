@@ -72,16 +72,15 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 
 // Get all restaurants
+// Update getAllRestaurants
 export const getAllRestaurants = async (req: Request, res: Response) => {
-  const { ownerId } = req.query; // Add ownerId filter
+  const { ownerId } = req.query;
 
   try {
     const restaurants = await prisma.restaurant.findMany({
       where: ownerId ? { restaurantOwnerId: Number(ownerId) } : undefined,
       include: {
-        menuItems: {
-          include: { category: true }
-        },
+        menuItems: true,
         geoLocation: true,
         media: true,
       },

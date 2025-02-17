@@ -16,10 +16,13 @@ import mediaRoutes from './router/media.controller';
 import googleRoutes from './router/google.routes';
 import orderRoutes from './router/order.routes'; 
 
+
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
+
+
 app.use(cors());
 app.use(helmet())
 app.use(cors({ origin: "http://localhost:3001", credentials: true }));
@@ -38,7 +41,6 @@ app.use(express.json());
 // app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 app.use('/api/owner', restaurantOwnerRoutes);
-
 app.use('/api', categorieRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
@@ -50,9 +52,9 @@ app.use('/api', orderRoutes);
 //   res.json(users);
 // });
 
-// app.listen(3000, () => {
-//   console.log('Backend server running on http://localhost:3000');
-// });
+// Socket.io connection
+
+
 // ✅ Test Database Connection
 const testDB = async () => {
   try {
