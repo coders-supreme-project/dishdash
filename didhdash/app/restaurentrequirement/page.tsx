@@ -79,7 +79,7 @@ export default function Home() {
 
       // Register the restaurant
       const restaurantResponse = await axios.post(
-        'http://localhost:3000/api/restaurant/create',
+        'http://localhost:3000/api/restaurent/create',
         {
           name: values.restaurantName,
           image: values.image,

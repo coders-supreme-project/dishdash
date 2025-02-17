@@ -23,10 +23,10 @@ const Dashboard: React.FC = () => {
   const handleMenuItemClick = (menuItem: string) => {
     switch (menuItem) {
       case 'home':
-        router.push('/');
+        router.push('/DeliveryPages/pages');
         break;
       case 'orders':
-        router.push('/DeliveryPages/orders');
+        router.push('/DeliveryPages/order');
         break;
       case 'profile':
         router.push('/DeliveryPages/profile');

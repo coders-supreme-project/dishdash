@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import LiveMap from "../map/page";
 import Navbar from "../navbar/page";
 import Sidebar from "../sidebar/page";
 import { LoadScript } from "@react-google-maps/api";
@@ -51,7 +50,7 @@ const WorkSpace: React.FC = () => {
         googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
         onLoad={() => console.log("Google Maps script loaded!")}
       >
-        <LiveMap onMapLoaded={handleMapLoaded} />
+     
       </LoadScript>
     </div>
   );

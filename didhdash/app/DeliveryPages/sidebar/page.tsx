@@ -98,6 +98,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, closeSidebar, onMenuIt
                       whileTap={{ scale: 0.95 }}
                     >
                       <button
+                        onClick={() => handleMenuItemClick('orders')}
+                        className="w-full text-left hover:bg-white hover:text-[#FC8A06] p-2 rounded-lg transition-colors duration-300 text-white"
+                      >
+                        Orders
+                      </button>
+                    </motion.li>
+                    <motion.li
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <button
                         onClick={() => handleMenuItemClick('profile')}
                         className="w-full text-left hover:bg-white hover:text-[#FC8A06] p-2 rounded-lg transition-colors duration-300 text-white"
                       >

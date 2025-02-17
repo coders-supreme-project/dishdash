@@ -193,3 +193,96 @@ export const deleteOrderItem = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getOrdersByDriver = async (req: Request, res: Response): Promise<void> => {
+  try {
+   
+    const {id} = req.params;
+
+    if (!id) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    // First get the driver details from userId
+    const driver = await prisma.driver.findUnique({
+      where: { id: Number(id) }
+    });
+
+    if (!driver) {
+      res.status(404).json({ message: 'Driver not found' });
+      return;
+    }
+
+    // Get all orders for this driver with related data
+    const orders = await prisma.order.findMany({
+      where: { 
+        driverId: driver.id 
+      },
+      include: {
+        customer: {
+          select: {
+            user: {
+              select: {
+                email: true,
+                phoneNumber: true
+              }
+            }
+          }
+        },
+        restaurant: {
+          select: {
+            name: true,
+            address: true,
+            restaurantOwner: {
+              select: {
+                user: {
+                  select: {
+                    phoneNumber: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderItems: {
+          include: {
+            menuItem: {
+              select: {
+                name: true,
+                price: true
+              }
+            }
+          }
+        }
+      },
+     
+    });
+
+    // Group orders by status
+    const groupedOrders = {
+      pending: orders.filter(order => order.status === 'pending'),
+      prepared: orders.filter(order => order.status === 'prepared'),
+      confirmed: orders.filter(order => order.status === 'confirmed'),
+      delivered: orders.filter(order => order.status === 'delivered'),
+      cancelled: orders.filter(order => order.status === 'out_for_delivery')
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalOrders: orders.length,
+        groupedOrders,
+        orders
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching driver orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch driver orders',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
