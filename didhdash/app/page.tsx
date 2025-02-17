@@ -288,6 +288,11 @@ export default function Home() {
     }
 
     try {
+      if (restaurantId === null) {
+        alert('Please select a restaurant.');
+        return;
+      }
+
       const orderData = {
         items: cart.map(item => ({
           menuItemId: item.id,
@@ -808,4 +813,3 @@ export default function Home() {
     </div>
   );
 }
-

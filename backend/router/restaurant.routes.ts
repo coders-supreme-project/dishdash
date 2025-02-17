@@ -7,16 +7,20 @@ import {
   deleteRestaurant,
   searchRestaurants,
   getRestaurantMenuByCategory,
+  signCloudinary,   
+  getRestaurantIdByOwnerId,
 } from '../controller/restaurant.controller';
 
 const router = Router();
-
-router.get('/restaurants/search', searchRestaurants);
-router.get('/restaurants', getAllRestaurants);
+//@ts-ignore
+router.post("/sign-cloudinary", signCloudinary);
+router.get('/search', searchRestaurants);
+router.get('/', getAllRestaurants);
 router.post('/create', createRestaurant);
-router.get('/restaurants/:id', getRestaurantById);
-router.put('/restaurants/:id', updateRestaurant);
-router.delete('/restaurants/:id', deleteRestaurant);
-router.get('/restaurants/:restaurantId/menu-categories', getRestaurantMenuByCategory);
+router.get('/one/:id', getRestaurantById);
+router.put('/:id', updateRestaurant);
+router.delete('/:id', deleteRestaurant);
+router.get('/menu-categories/:restaurantId/', getRestaurantMenuByCategory);
+router.get('/owner/:ownerId/restaurant-id', getRestaurantIdByOwnerId);
 
 export default router;

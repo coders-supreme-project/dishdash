@@ -13,14 +13,14 @@ import { authenticateJWT } from '../middleware/authMiddleware';
 const router = Router();
 
 // Order routes with authentication
-router.post('/orders', authenticateJWT, createOrder);
-router.get('/orders', authenticateJWT, getOrders);
-router.patch('/orders/:orderId', authenticateJWT, updateOrderStatus);
+router.post('/', authenticateJWT, createOrder);
+router.get('/', authenticateJWT, getOrders);
+router.patch('/:orderId', authenticateJWT, updateOrderStatus);
 
-router.delete('/orders/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
+router.delete('/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
 
-router.post('/orders/confirm-payment', authenticateJWT, confirmPayment);
+router.post('/confirm-payment', authenticateJWT, confirmPayment);
 
-router.post('/orders/payment-intent', authenticateJWT, createPaymentIntent);
+router.post('/payment-intent', authenticateJWT, createPaymentIntent);
 
 export default router;

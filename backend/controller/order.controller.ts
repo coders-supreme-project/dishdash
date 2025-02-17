@@ -115,8 +115,9 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
     console.log("orders",orders);
     res.json(orders);
   } catch (error: any) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json({ error: error.message });
+    throw error
+    // console.error('Error fetching orders:', error);
+    // res.status(500).json({ error: error.message });
   }
 };
 
@@ -239,25 +240,60 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
   }
 };
 
-
 export const deleteOrderItem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId, itemId } = req.params;
+    const { orderId } = req.params;
 
-    await prisma.orderItem.delete({
+    // Validate input
+    if (!orderId) {
+      res.status(400).json({ error: 'Invalid orderId' });
+      return;
+    }
+
+    // Check if the order exists
+    const order = await prisma.order.findUnique({
       where: {
-        id: Number(itemId),
+        id: Number(orderId),
+      },
+      include: {
+        payment: true, // Include associated payments
+      },
+    });
+
+    if (!order) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    // Delete the payment record if it exists
+    if (order.payment.length > 0) {
+      await prisma.payment.deleteMany({
+        where: {
+          orderId: Number(orderId),
+        },
+      });
+    }
+
+    // Delete all order items associated with the orderId
+    await prisma.orderItem.deleteMany({
+      where: {
         orderId: Number(orderId),
       },
     });
 
-    res.json({ success: true });
+    // Delete the order itself
+    await prisma.order.delete({
+      where: {
+        id: Number(orderId),
+      },
+    });
+
+    res.json({ success: true, message: 'Order, associated items, and payment records have been deleted' });
   } catch (error: any) {
-    console.error('Error deleting order item:', error);
+    console.error('Error deleting order, items, and payment records:', error);
     res.status(500).json({ error: error.message });
   }
 };
-
 export const createPaymentIntent = async (req: Request, res: Response): Promise<void> => {
   try {
     const { orderId } = req.body;
@@ -291,6 +327,7 @@ export const createPaymentIntent = async (req: Request, res: Response): Promise<
       clientSecret: paymentIntent.client_secret
     });
   } catch (error: any) {
+    throw error
     console.error('Error creating payment intent:', error);
     res.status(500).json({ error: error.message });
   }

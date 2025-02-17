@@ -22,25 +22,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
+
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
   }, []);
+  
 
   const login = async (email: string, password: string) => {
     try {
       const response = await axios.post("http://localhost:3000/api/user/login", { email, password });
-      const { token, user } = response.data;
+    const { token, user } = response.data;
       setToken(token);
       setUser(user);
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      router.push("/");
+  
+      if (user.role === "restaurantOwner") {
+        const restaurantId = await fetchRestaurantId(user.id);
+        if (restaurantId) {
+          localStorage.setItem("restaurantId", restaurantId);
+          router.push(`/dashboardrestaurent/${restaurantId}`);
+        } else {
+          router.push("/create-restaurant");
+        }
+      
+      } else if (user.role === "customer") {
+        router.push("/");
+      } else if (user.role === "driver") {
+        router.push("/dashboarddriver");
+      } else {
+        router.push("/");
+      }
     } catch (error) {
-      console.error("Login failed", error);
+      console.error("❌ Login failed", error);
     }
   };
+  
+  
+  const fetchRestaurantId = async (ownerId: number) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/api/restaurants?ownerId=${ownerId}`
+      );
+      return response.data[0]?.id?.toString() || null;
+    } catch (error) {
+      console.error("Error fetching restaurant ID", error);
+      return null;
+    }
+  };
+  
+  
+  
 
   const register = async (name: string, email: string, password: string, phoneNumber?: string, address?: string) => {
     try {
@@ -50,13 +84,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Registration failed", error.response?.data || error.message);
     }
   };
-  
 
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("restaurantId");
     router.push("/login");
   };
 

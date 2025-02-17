@@ -4,9 +4,9 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { PaymentForm } from '../../components/PaymentForm';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
-import { useEffect } from 'react';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+console.log("ssssssssssssssssssssssssssssss",process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
   throw new Error('Stripe publishable key is missing');
@@ -25,7 +25,7 @@ export default function PaymentPage() {
   const options = {
     clientSecret,
     appearance: {
-      theme: 'stripe',
+      theme: 'stripe' as 'stripe',
       variables: {
         colorPrimary: '#ffd700',
         colorBackground: '#ffffff',
@@ -41,13 +41,15 @@ export default function PaymentPage() {
   return (
     <div className="max-w-[600px] mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">Complete Your Payment</h1>
+      
       <Elements stripe={stripePromise} options={options}>
         <PaymentForm 
           clientSecret={clientSecret} 
-          orderId={params.orderId as string}
+          cartItems={JSON.parse(localStorage.getItem('cartItems') || '[]')}
+          orderId={params?.orderId as string}
           onPaymentSuccess={() => {
             localStorage.removeItem('cartItems');
-            router.push('/');
+            router.push('/ ');
           }}
         />
       </Elements>
