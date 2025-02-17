@@ -17,6 +17,9 @@ interface Restaurant {
 
 
 export default function ProfilePage() {
+  const user = localStorage.getItem("user");
+  console.log(user,);
+  
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -24,17 +27,25 @@ export default function ProfilePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  
+  
+  const restId = localStorage.getItem("restaurant");
+
+  console.log("hello",restId);
 
 useEffect(() => {
-  const storedId = localStorage.getItem("restaurantId");
-  if (storedId) setRestaurantId(Number(storedId));
+  if (restId) setRestaurantId(Number(restId));
+  fetchRestaurantProfile()
+
 }, []);
   const fetchRestaurantProfile = async () => {
-    if (!restaurantId) return;
+    if (!restId) return;
     
     try {
+      console.log("hello",restId);
+
       const response = await axios.get<Restaurant>(
-        `http://localhost:3000/api/restaurent/${restaurantId}`
+        `http://localhost:3000/api/restaurent/${restId}`
       );
       setRestaurant(response.data);
       setUpdatedRestaurant(response.data);
@@ -44,7 +55,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setImageFile(e.target.files[0]);

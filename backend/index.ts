@@ -64,7 +64,11 @@ const testDB = async () => {
   }
 };
 testDB();
-const PORT = process.env.PORT || 3003;
+
+app.get("/hello",(req,res)=>{
+  res.send("hello world")
+})
+const PORT = process.env.PORT || 3000;
 // ✅ Routes
 app.use("/api/restaurant-owner", restaurantOwnerRoutes); // ✅ Fixed route naming
 

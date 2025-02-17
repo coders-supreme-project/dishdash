@@ -14,6 +14,7 @@ import { MenuItem, Order, OrderStatus } from './services/api';
 import Career from "./career/page";
 import RestaurantMap from "../components/RestaurantMap";
 import DriverLocation from "../components/DriverLocation"
+
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
   { name: "Cheeseburger", icon: "🍔", price: 8.99 },
@@ -841,7 +842,8 @@ export default function Home() {
             >
               &times; {/* Close icon */}
             </button>
-            <RestaurantMap />
+            {/* <RestaurantMap /> */}
+            <RestaurantMap/>
           </div>
         </div>
       )}

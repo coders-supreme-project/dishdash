@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post("/api/user/login", { email, password });
+      const response = await axios.post("http://localhost:3000/api/user/login", { email, password });
     const { token, user } = response.data;
       setToken(token);
       setUser(user);
