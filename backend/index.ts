@@ -16,6 +16,7 @@ import mediaRoutes from './router/media.controller';
 import googleRoutes from './router/google.routes';
 import orderRoutes from './router/order.routes'; 
 
+
 dotenv.config(); // ✅ Load environment variables
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
@@ -25,16 +26,16 @@ app.use(helmet())
 app.use(cors({ origin: "http://localhost:3001", credentials: true }));
 dotenv.config();
 app.use(express.json());
+app.use(cors());
+app.use(express.json());
 app.use("/api/user", authRoutes);
-
+app.use('/api/orders', orderRoutes);
 app.use('/api/auth', googleRoutes);
 
 
 const prisma = new PrismaClient();
 
 // ✅ Middleware
-app.use(cors());
-app.use(express.json());
 // app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 app.use('/api/owner', restaurantOwnerRoutes);

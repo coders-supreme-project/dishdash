@@ -45,7 +45,7 @@ const Login = () => {
             router.push("/dashboardrestaurent");
             break;
           case "driver":
-            router.push("/dashboarddriver");
+            router.push("/DeliveryPages/pages");
             break;
           default:
             router.push("/");
