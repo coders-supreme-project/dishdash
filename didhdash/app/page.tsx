@@ -14,6 +14,7 @@ import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
 
 import Career from "./career/page";
+import { ItemDetailsModal } from './components/ItemDetailsModal';
 
 
 
@@ -79,6 +80,8 @@ export default function Home() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
 
   const authContext = useContext(AuthContext);
   const isLoggedIn = authContext?.user != null;
@@ -202,6 +205,14 @@ export default function Home() {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, priceRange.min, priceRange.max]);
+
+  const handleItemClick = (item: MenuItem) => {
+    setSelectedItem({
+      ...item,
+      price: Number(item.price) // Ensure price is a number
+    });
+    setShowItemModal(true);
+  };
 
   // Add function to handle adding items to cart
   const handleAddToCart = (item: MenuItem, type: 'menuItem' | 'restaurant') => {
@@ -365,6 +376,30 @@ export default function Home() {
             <span className="text-yellow">Meal</span>
             <span>.</span>
           </div>
+          <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Menu</h1>
+      <div className="grid grid-cols-3 gap-4">
+        {menuItems.map((item) => (
+          <div key={item.id} className="cursor-pointer p-4 bg-white shadow rounded" onClick={() => handleItemClick(item)}>
+            <Image src={item.imageUrl || '/default-food-image.jpg'} alt={item.name} width={150} height={150} className="mb-2" />
+            <h2 className="text-lg font-semibold">{item.name}</h2>
+            <p className="text-yellow-600">${item.price.toFixed(2)}</p>
+          </div>
+        ))}
+      </div>
+
+      {showItemModal && selectedItem && (
+        <ItemDetailsModal
+          isOpen={showItemModal}
+          onClose={() => setShowItemModal(false)}
+          item={selectedItem}
+          onAddToCart={(ingredients) => {
+            handleAddToCart(selectedItem, 'menuItem');
+            setShowItemModal(false);
+          }}
+        />
+      )}
+    </div>
           
           <nav className="nav-menu">
             {navItems.map((item) => (
@@ -514,7 +549,11 @@ export default function Home() {
                 menuItems.length > 0 ? (
                   <div className="grid grid-cols-4 gap-6">
                     {menuItems.map((item) => (
-                      <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                      <div 
+                        key={item.id} 
+                        className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer"
+                        onClick={() => handleItemClick(item)}
+                      >
                         <div className="relative h-48">
                           <Image
                             src={item.imageUrl || DEFAULT_FOOD_IMAGE}
@@ -534,7 +573,10 @@ export default function Home() {
                             </div>
                             <button 
                               className="add-btn"
-                              onClick={() => handleAddToCart(item, 'menuItem')}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent modal from opening
+                                handleAddToCart(item, 'menuItem');
+                              }}
                             >
                               +
                             </button>
@@ -672,7 +714,11 @@ export default function Home() {
                       <h3 className="text-lg font-semibold mb-4">{category.categoryName}</h3>
                       <div className="grid grid-cols-3 gap-6">
                         {category.items.map((item: any) => (
-                          <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                          <div 
+                            key={item.id} 
+                            className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer"
+                            onClick={() => handleItemClick(item)}
+                          >
                             <div className="relative h-48">
                               <Image
                                 src={item.imageUrl || DEFAULT_FOOD_IMAGE}
@@ -690,7 +736,10 @@ export default function Home() {
                                 <div className="font-medium text-yellow">${Number(item.price).toFixed(2)}</div>
                                 <button 
                                   className="add-btn"
-                                  onClick={() => handleAddToCart(item, 'menuItem')}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent modal from opening
+                                    handleAddToCart(item, 'menuItem');
+                                  }}
                                 >
                                   +
                                 </button>
