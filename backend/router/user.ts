@@ -1,6 +1,6 @@
 import express, { Request } from 'express';
 import { registerUser, loginUser, getUserProfile } from "../controller/user";
-import { authenticateJWT } from "../midlleware/authmiddleware";
+import { authenticateJWT } from "../middleware/authMiddleware";
 import { Role } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {

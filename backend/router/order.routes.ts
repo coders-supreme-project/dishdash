@@ -1,15 +1,15 @@
-import express from "express";
-import { createOrder, getOrders, confirmPayment } from "../controller/order.controller";
+import { Router } from 'express';
+import { createOrder, getOrders, updateOrderStatus, deleteOrderItem, confirmPayment } from '../controller/order.controller';
+import { authenticateJWT } from '../middleware/authMiddleware';
 
-const router = express.Router();
+const router = Router();
 
-// Create a new order
-router.post("/create", createOrder as express.RequestHandler);
+// Order routes with authentication
+router.post('/orders', authenticateJWT, createOrder);
+router.get('/orders', authenticateJWT, getOrders);
+router.patch('/orders/:orderId', authenticateJWT, updateOrderStatus);
 
-// Get all orders
-router.get("/", getOrders as express.RequestHandler);
-
-// Confirm payment for an order
-router.post("/confirm-payment", confirmPayment as express.RequestHandler);
+router.delete('/orders/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
+router.post('/orders/confirm-payment', authenticateJWT, confirmPayment);
 
 export default router;
