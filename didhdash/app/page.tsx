@@ -77,7 +77,6 @@ export default function Home() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMapPopupVisible, setIsMapPopupVisible] = useState(false); // State for map popup visibility
-  const [restaurantId, setRestaurantId] = useState<number | null>(null);
 
   const authContext = useContext(AuthContext);
   const isLoggedIn = authContext?.user != null;
@@ -157,7 +156,6 @@ export default function Home() {
     try {
       setIsLoadingMenu(true);
       setSelectedRestaurant(restaurantId);
-      setRestaurantId(restaurantId);
       const menuData = await fetchRestaurantMenuByCategory(restaurantId);
       setRestaurantMenu(menuData);
     } catch (error) {
@@ -285,26 +283,28 @@ export default function Home() {
     }
 
     try {
-      if (restaurantId === null) {
-        alert('Please select a restaurant.');
+      setIsSubmitting(true);
+      const restaurantId = cart[0]?.restaurantId;
+      
+      if (!restaurantId) {
+        alert('Invalid restaurant ID');
         return;
       }
 
       const orderData = {
         items: cart.map(item => ({
-          menuItemId: item.id,
+          id: item.id,
           quantity: item.quantity,
-          price: item.price // Ensure this is a number
+          price: item.price
         })),
-        totalAmount: totalAmount, // Ensure this is a number
-        restaurant: restaurantId, // Use the defined restaurantId
-        status: 'pending',
-        paymentStatus: 'unpaid',
-        deliveryAddress: '123 Main St' // Replace with actual delivery address
+        totalAmount,
+        customerId: userId,
+        restaurantId
       };
 
       const response = await createOrder(orderData);
       
+      // Check if response exists and has success property
       if (response && response.success) {
         setCart([]);
         alert('Order placed successfully!');
@@ -312,9 +312,14 @@ export default function Home() {
       } else {
         alert('Failed to create order. Please try again.');
       }
+
     } catch (error: any) {
       console.error('Error placing order:', error);
-      alert(error.response?.data?.error || 'Failed to create order. Please try again.');
+      if (error.response?.status === 401) {
+        router.push('/login');
+      } else {
+        alert(error.response?.data?.error || 'Failed to place order. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -838,7 +843,7 @@ export default function Home() {
               &times; {/* Close icon */}
             </button>
             {/* <RestaurantMap /> */}
-            <RestaurantMap/>
+            <DriverLocation driverId={1} />
           </div>
         </div>
       )}
