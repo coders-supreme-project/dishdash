@@ -9,7 +9,7 @@ const router = Router();
 router.post('/', authenticateJWT, createOrder);
 router.get('/orders', authenticateJWT, getOrders);
 router.get('/:id', authenticateJWT, getOrdersByDriver);
-router.delete('/orders/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
+router.delete('/:orderId/items/:itemId', authenticateJWT, deleteOrderItem);
 router.post('/orders/confirm-payment', authenticateJWT, confirmPayment);
 
 router.get('/', authenticateJWT, getOrders);

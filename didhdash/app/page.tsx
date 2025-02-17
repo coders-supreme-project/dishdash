@@ -82,6 +82,9 @@ export default function Home() {
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<MenuItem | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<MenuItem[]>([]);
+  const [totalOrderAmount, setTotalOrderAmount] = useState(0);
 
   const authContext = useContext(AuthContext);
   const isLoggedIn = authContext?.user != null;
@@ -209,8 +212,9 @@ export default function Home() {
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem({
       ...item,
-      price: Number(item.price) // Ensure price is a number
+      price: Number(item.price)
     });
+    setSelectedItemForPurchase(item);
     setShowItemModal(true);
   };
 
@@ -356,6 +360,31 @@ export default function Home() {
       setPriceRange({ min: '', max: '' });
       loadData(); // Reload initial data
     }
+  };
+
+  // Add this function to handle bulk purchase
+  const handleBulkPurchase = () => {
+    if (selectedOrders.length === 0) {
+      alert('Please select items to purchase');
+      return;
+    }
+    
+    selectedOrders.forEach(item => {
+      handleAddToCart(item, 'menuItem');
+    });
+    
+    setSelectedOrders([]);
+    setShowItemModal(false);
+  };
+
+  // Add this function to handle all orders purchase
+  const handlePurchaseAll = () => {
+    if (cart.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
+    handleCheckout();
   };
 
   if (loading) {
@@ -571,15 +600,6 @@ export default function Home() {
                             <div className="font-medium text-yellow">
                               ${Number(item.price).toFixed(2)}
                             </div>
-                            <button 
-                              className="add-btn"
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent modal from opening
-                                handleAddToCart(item, 'menuItem');
-                              }}
-                            >
-                              +
-                            </button>
                           </div>
                           {item.restaurant && (
                             <div className="text-sm text-gray-500 mt-2">
@@ -733,16 +753,9 @@ export default function Home() {
                                 <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="font-medium text-yellow">${Number(item.price).toFixed(2)}</div>
-                                <button 
-                                  className="add-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // Prevent modal from opening
-                                    handleAddToCart(item, 'menuItem');
-                                  }}
-                                >
-                                  +
-                                </button>
+                                <div className="font-medium text-yellow">
+                                  ${Number(item.price).toFixed(2)}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -840,20 +853,14 @@ export default function Home() {
               </div>
             </div>
 
-            <button className="coupon-btn mb-4">
-              <div className="flex items-center gap-2">
-                <div className="coupon-icon">%</div>
-                <div>Have a coupon code?</div>
-              </div>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-
             <button 
-              className={`checkout-btn ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={handleCheckout}
+              className={`w-full bg-yellow text-white py-3 rounded-xl hover:bg-yellow-600 transition-colors ${
+                isSubmitting || cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handlePurchaseAll}
               disabled={cart.length === 0 || isSubmitting}
             >
-              {isSubmitting ? 'Processing...' : 'Checkout'}
+              {isSubmitting ? 'Processing...' : `Purchase All (${cart.length} items)`}
             </button>
           </div>
         </div>

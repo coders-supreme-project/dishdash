@@ -41,6 +41,7 @@ export default function FoodOrder() {
     restaurant: ''
   });
   const [error, setError] = useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
 
   const loadOrders = async () => {
     try {
@@ -167,6 +168,26 @@ export default function FoodOrder() {
     router.push('/?showCategories=true');
   };
 
+  const handlePurchaseAllOrders = async () => {
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    
+    if (pendingOrders.length === 0) {
+      alert('No pending orders to purchase');
+      return;
+    }
+
+    try {
+      // Purchase all pending orders
+      for (const order of pendingOrders) {
+        await handlePurchase(order.id);
+      }
+      alert('All orders purchased successfully!');
+    } catch (error) {
+      console.error('Error purchasing orders:', error);
+      alert('Failed to purchase some orders');
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesTab = activeTab === 'active' ? order.status === 'pending' : order.status === 'completed';
     return matchesTab;
@@ -219,6 +240,17 @@ export default function FoodOrder() {
             Completed Orders
           </button>
         </div>
+
+        {orders.some(order => order.status === 'pending') && (
+          <div className="mb-6">
+            <button 
+              className="w-full bg-yellow text-white py-3 rounded-xl hover:bg-yellow-600 transition-colors"
+              onClick={handlePurchaseAllOrders}
+            >
+              Purchase All Pending Orders
+            </button>
+          </div>
+        )}
 
         <div className="grid gap-6">
           {filteredOrders.map((order) => (
@@ -296,14 +328,6 @@ export default function FoodOrder() {
                     >
                       <Trash2 className="h-4 w-4" /> Delete Order
                     </button>
-                    {order.status === 'pending' && (
-                      <button 
-                        className="px-6 py-2 rounded-xl bg-yellow text-white font-medium"
-                        onClick={() => handlePurchase(order.id)}
-                      >
-                        Purchase Now
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
