@@ -17,7 +17,7 @@ export default function Driver() {
   const handleAccept = () => {
     setAccepted(true); // Update state to trigger the redirect
   };
-
+ 
   return (
     <main className="min-h-screen bg-gray-50 p-4 md:p-8 flex items-center justify-center">
       <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 md:p-8">
