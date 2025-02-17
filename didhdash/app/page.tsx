@@ -392,7 +392,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold">Hello, Patricia</h1>
+              <h1 className="text-2xl font-semibold"></h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-4">
@@ -562,56 +562,55 @@ export default function Home() {
             <div>
               {/* Popular Restaurants */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Popular Restaurants</h2>
-                  <button 
-                    className="text-yellow flex items-center gap-1"
-                    onClick={() => setViewAllRestaurants(!viewAllRestaurants)}
-                  >
-                    {viewAllRestaurants ? 'Show Less' : 'View all'} <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className={`grid ${viewAllRestaurants ? 'grid-cols-4' : 'grid-cols-3'} gap-6`}>
-                  {displayedRestaurants.map((restaurant) => (
-                    <div 
-                      key={restaurant.id} 
-                      className="dish-card cursor-pointer"
-                      onClick={() => handleRestaurantClick(restaurant.id)}
-                    >
-                      <div className="relative">
-                        <Image
-                          src={restaurant.image || DEFAULT_FOOD_IMAGE}
-                          alt={restaurant.name}
-                          width={500}
-                          height={300}
-                          className="w-full h-[200px] object-cover"
-                        />
-                        {restaurant.discount && (
-                          <div className="dish-discount">
-                            {restaurant.discount}
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold">{restaurant.name}</h3>
-                          <div className="dish-price">
-                            ${restaurant.menuItems?.[0]?.price || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex text-yellow-400">
-                            {"★".repeat(5)}
-                          </div>
-                          <button className="add-btn">
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-semibold">Popular Restaurants</h2>
+    <button 
+      className="text-yellow flex items-center gap-1"
+      onClick={() => setViewAllRestaurants(!viewAllRestaurants)}
+    >
+      {viewAllRestaurants ? 'Show Less' : 'View all'} <ChevronRight className="h-4 w-4" />
+    </button>
+  </div>
+  <div className={`grid ${viewAllRestaurants ? 'grid-cols-4' : 'grid-cols-3'} gap-6`}>
+    {displayedRestaurants.map((restaurant) => (
+      <div 
+        key={restaurant.id} 
+        className="dish-card cursor-pointer"
+        onClick={() => handleRestaurantClick(restaurant.id)}
+      >
+        <div className="relative">
+          <Image
+            src={restaurant.image || DEFAULT_FOOD_IMAGE}
+            alt={restaurant.name}
+            width={500}
+            height={300}
+            className="w-full h-[200px] object-cover"
+          />
+          {restaurant.discount && (
+            <div className="dish-discount">
+              {restaurant.discount}
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold">{restaurant.name}</h3>
+            {/* Remove the price display */}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex text-yellow-400">
+              {"★".repeat(5)}
+            </div>
+            {/* Replace the "+" button with "See Menu" */}
+            <button className="text-yellow">
+              See Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
               {/* Recent Orders */}
               <div>

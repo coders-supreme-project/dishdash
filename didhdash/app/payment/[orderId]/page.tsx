@@ -45,6 +45,7 @@ export default function PaymentPage() {
       <Elements stripe={stripePromise} options={options}>
         <PaymentForm 
           clientSecret={clientSecret} 
+          //@ts-ignore
           cartItems={JSON.parse(localStorage.getItem('cartItems') || '[]')}
           orderId={params?.orderId as string}
           onPaymentSuccess={() => {
