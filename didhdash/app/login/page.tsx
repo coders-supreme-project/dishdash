@@ -29,7 +29,7 @@ const Login = () => {
   
     try {
       const response = await axios.post("http://localhost:3000/api/user/login", { email, password });
-  
+
       if (response.status === 200 && response.data.token) {
         await login(email, password);
         
@@ -59,6 +59,7 @@ const Login = () => {
       setError(err.response?.data?.message || "Invalid email or password");
     }
   };
+  
   
   
   

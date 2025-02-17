@@ -5,9 +5,11 @@ import Image from "next/image";
 import { Bell, ChevronRight, Search, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { fetchOrders, updateOrderStatus, deleteOrderItem, updateOrderItem } from "../services/api";
-import type { Order, OrderItem, OrderStatus } from "../services/api";
+import { fetchOrders, deleteOrderItem, updateOrderItem, createPaymentIntent, confirmOrderPayment } from "../services/api";
+import type { Order } from "../services/api";
 import {jwtDecode} from "jwt-decode";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
@@ -23,6 +25,8 @@ interface DecodedToken {
   email: string;
   role: string;
 }
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function FoodOrder() {
   const router = useRouter();
@@ -76,22 +80,38 @@ export default function FoodOrder() {
         await updateOrderItem(orderId, itemId, newQuantity);
       }
 
-      loadOrders();
+      await loadOrders();
     } catch (error) {
       console.error('Error updating order quantity:', error);
+      alert('Failed to update quantity. Please try again.');
     }
   };
 
-  const handleDeleteOrder = (orderId: number) => {
-    setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+  const handleDeleteOrder = async (orderId: number) => {
+    try {
+      const confirmed = window.confirm('Are you sure you want to delete this order?');
+      if (!confirmed) return;
+
+      await deleteOrderItem(orderId, 0);
+      await loadOrders();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to delete order. Please try again.');
+    }
   };
 
   const handlePurchase = async (orderId: number) => {
     try {
-      await updateOrderStatus(orderId, 'completed' as OrderStatus);
-      loadOrders();
-    } catch (error) {
-      console.error('Error completing order:', error);
+      const { clientSecret } = await createPaymentIntent(orderId);
+      
+      // Store cart items in local storage
+      localStorage.setItem('cartItems', JSON.stringify(orders));
+      
+      // Redirect to payment page with order ID
+      router.push(`/payment/${orderId}?clientSecret=${clientSecret}`);
+    } catch (error: any) {
+      console.error('Error processing payment:', error);
+      alert(error.message || 'Failed to process payment');
     }
   };
 
@@ -136,17 +156,7 @@ export default function FoodOrder() {
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
       restaurant: newOrder.restaurant,
-      customerId: userId,
-      orderItems: [
-        {
-          menuItem: {
-            name: newOrder.name,
-            price: newOrder.price,
-            imageUrl: DEFAULT_FOOD_IMAGE,
-          },
-          quantity: 1,
-        }
-      ]
+      customerId: userId
     };
 
     setOrders(prev => [...prev, newOrderItem]);
@@ -275,7 +285,9 @@ export default function FoodOrder() {
 
                 <div className="flex justify-between items-center mt-6 pt-4 border-t">
                   <div className="text-xl font-semibold">
-                    Total: <span className="text-yellow">${order.totalAmount.toFixed(2)}</span>
+                    Total: <span className="text-yellow">
+                      ${Number(order.totalAmount).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex gap-4">
                     <button 

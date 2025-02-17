@@ -92,35 +92,34 @@ model Driver {
 }
 
 model Order {
-  id              Int            @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   customerId      Int
   restaurantId    Int
   driverId        Int?
-  totalAmount     Float
-  status          OrderStatus   @default(pending)
+  totalAmount     Decimal
+  status          OrderStatus
+  paymentStatus   PaymentStatus
   deliveryAddress String
-  paymentStatus   PaymentStatus @default(pending)
-
-  // Relationships
-  customer        Customer    @relation(fields: [customerId], references: [id])
-  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
-  driver          Driver?     @relation(fields: [driverId], references: [id])
+  createdAt       DateTime      @default(now())
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id])
+  driver          Driver?       @relation(fields: [driverId], references: [id])
   orderItems      OrderItem[]
-  payments        Payment[]   // ✅ Virtual relation (No need for `fields` and `references`)
+  payment         Payment[]
 }
-
 
 model Payment {
-  id              Int            @id @default(autoincrement())
-  orderId         Int            // ✅ Removed @unique to allow multiple payments
-  paymentIntentId String         @unique
-  status          PaymentStatus   @default(pending)
-
-  // Relationships
-  order           Order           @relation(fields: [orderId], references: [id])
+  id              Int           @id @default(autoincrement())
+  orderId         Int
+  amount          Decimal
+  paymentIntentId String       @unique
+  status          PaymentStatus
+  paymentMethod   String
+  currency        String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  order           Order         @relation(fields: [orderId], references: [id])
 }
-
-
 
 model OrderItem {
   id                 Int   @id @default(autoincrement())
