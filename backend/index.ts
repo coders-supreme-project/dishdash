@@ -41,12 +41,13 @@ app.use(express.json());
 // app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 app.use('/api/owner', restaurantOwnerRoutes);
-app.use('/api', categorieRoutes);
+
+app.use('/api/categories', categorieRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/media', mediaRoutes);
 // app.use('/api', reviewRoutes);
-app.use('/api/restaurent', restaurantRoutes);
-app.use('/api', orderRoutes);
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/orders', orderRoutes);
 // app.get('/api/users', async (req, res) => {
 //   const users = await prisma.user.findMany();
 //   res.json(users);

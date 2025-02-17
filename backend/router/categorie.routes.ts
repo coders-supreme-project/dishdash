@@ -16,12 +16,12 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextF
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-router.post('/categories', asyncHandler(createCategory));
-router.get('/categories', asyncHandler(getCategoriesCustomer));
-router.get('/categories/:id', asyncHandler(getCategoryById));
-router.get('/categories/:categoryId/menu-items', asyncHandler(getMenuItemsByCategoryId));
-router.put('/categories/:id', asyncHandler(updateCategory));
-router.delete('/categories/:id', asyncHandler(deleteCategory));
+router.post('/', asyncHandler(createCategory));
+router.get('/', asyncHandler(getCategoriesCustomer));
+router.get('/one/:id', asyncHandler(getCategoryById));
+router.get('/menu-items/:categoryId', asyncHandler(getMenuItemsByCategoryId));
+router.put('/:id', asyncHandler(updateCategory));
+router.delete('/:id', asyncHandler(deleteCategory));
 
 // Add error handling middleware at the end
 router.use((err: any, req: Request, res: Response, next: NextFunction) => {
