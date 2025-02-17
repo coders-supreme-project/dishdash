@@ -49,7 +49,7 @@ export const registerDriver = async (req: Request, res: Response): Promise<void>
 
     // Check if driver exists
     const existingDriver = await prisma.driver.findUnique({
-      where: { userId }
+      where: { userId: Number(userId) }
     });
 
     if (existingDriver) {
@@ -121,6 +121,7 @@ export const fetchData = async (req: Request, res: Response): Promise<void> => {
   try {
     const authReq = req as AuthRequest;
     const userId = authReq.user?.id;
+
     if (!userId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
@@ -159,12 +160,15 @@ export const fetchData = async (req: Request, res: Response): Promise<void> => {
       })
     ]);
 
+    let numberOfDelivered = delivered.length;
+    let numberOfAvailable = available.length;
+
     res.status(200).json({
       isDriver: true,
       driver: currentDriver,
       balance: user.balance,
-      Delivered: delivered.length,
-      available: available.length
+      Delivered: numberOfDelivered,
+      available: numberOfAvailable
     });
 
   } catch (error) {
@@ -173,4 +177,95 @@ export const fetchData = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-module.exports = { registerDriver, verifyDriver, fetchData };
+export const updateDriver = async (req: Request, res: Response): Promise<void> => {
+  try {
+    
+    const {id} = req.params;
+    const { firstName, lastName, vehicleType, licenseNumber } = req.body;
+
+    // Check authentication
+    if (!id) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    // Find existing driver
+    const existingDriver = await prisma.driver.findUnique({
+      where: { userId: Number(id) }
+    });
+
+    if (!existingDriver) {
+      res.status(404).json({ message: 'Driver not found' });
+      return;
+    }
+
+    // Validate input fields if they are provided
+    if (vehicleType && validator.isEmpty(vehicleType)) {
+      res.status(400).json({ message: 'Vehicle type cannot be empty' });
+      return;
+    }
+
+    if (licenseNumber && !validator.isAlphanumeric(licenseNumber)) {
+      res.status(400).json({ message: 'License number must be alphanumeric' });
+      return;
+    }
+
+    // Update driver with only provided fields
+    const updatedDriver = await prisma.driver.update({
+      where: { userId: Number(id) },
+      data: {
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
+        ...(vehicleType && { vehicleType }),
+        ...(licenseNumber && { licenseNumber }),
+      }
+    });
+
+    res.status(200).json({
+      message: 'Driver updated successfully',
+      driver: updatedDriver
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getDriverByUserId = async (req: Request, res: Response): Promise<void> => {
+  try {
+  
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      res.status(400).json({ message: 'Invalid user ID' });
+      return;
+
+    }
+
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        vehicleType: true,
+        licenseNumber: true,
+        balance: true
+      }
+    });
+
+    if (!driver) {
+      res.status(404).json({ message: 'Driver not found' });
+      return;
+    }
+
+    res.status(200).json(driver);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { registerDriver, verifyDriver, fetchData, updateDriver, getDriverByUserId };
