@@ -2,7 +2,6 @@
 
 import { Bell, ChevronRight, CreditCard, MapPin, Search, Wallet, Home as HomeIcon, ShoppingBag, Heart, MessageCircle, Clock, Receipt, Settings } from "lucide-react";
 import Image from "next/image";
-
 import Link from 'next/link';
 import { useState, useEffect, useContext } from "react";
 import "../styles/style.css";
@@ -12,10 +11,9 @@ import { AuthContext } from '../context/page'; // Add this line to import AuthCo
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
-
 import Career from "./career/page";
-
-
+import RestaurantMap from "../components/RestaurantMap";
+import DriverLocation from "./DeliveryPages/map/DriverMap"
 
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
@@ -78,11 +76,12 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [isMapPopupVisible, setIsMapPopupVisible] = useState(false); // State for map popup visibility
 
   const authContext = useContext(AuthContext);
   const isLoggedIn = authContext?.user != null;
 
+  const driverId=1
   // Move loadData inside the component and implement it
   const loadData = async () => {
     try {
@@ -104,7 +103,6 @@ export default function Home() {
       })));
     } catch (error) {
       throw error; 
-
     } finally {
       setLoading(false);
     }
@@ -125,8 +123,6 @@ export default function Home() {
     }
   };
 
- 
-  
   // Update the initial useEffect to use the new loadData function
   useEffect(() => {
     loadData();
@@ -160,7 +156,6 @@ export default function Home() {
     try {
       setIsLoadingMenu(true);
       setSelectedRestaurant(restaurantId);
-      setRestaurantId(restaurantId);
       const menuData = await fetchRestaurantMenuByCategory(restaurantId);
       setRestaurantMenu(menuData);
     } catch (error) {
@@ -288,8 +283,11 @@ export default function Home() {
     }
 
     try {
-      if (restaurantId === null) {
-        alert('Please select a restaurant.');
+      setIsSubmitting(true);
+      const restaurantId = cart[0]?.restaurantId;
+      
+      if (!restaurantId) {
+        alert('Invalid restaurant ID');
         return;
       }
 
@@ -297,10 +295,10 @@ export default function Home() {
         items: cart.map(item => ({
           menuItemId: item.id,
           quantity: item.quantity,
-          price: item.price // Ensure this is a number
+          price: item.price
         })),
-        totalAmount: totalAmount, // Ensure this is a number
-        restaurant: restaurantId, // Use the defined restaurantId
+        totalAmount,
+        restaurant: restaurantId,
         status: 'pending',
         paymentStatus: 'unpaid',
         deliveryAddress: '123 Main St' // Replace with actual delivery address
@@ -308,6 +306,7 @@ export default function Home() {
 
       const response = await createOrder(orderData);
       
+      // Check if response exists and has success property
       if (response && response.success) {
         setCart([]);
         alert('Order placed successfully!');
@@ -315,9 +314,14 @@ export default function Home() {
       } else {
         alert('Failed to create order. Please try again.');
       }
+
     } catch (error: any) {
       console.error('Error placing order:', error);
-      alert(error.response?.data?.error || 'Failed to create order. Please try again.');
+      if (error.response?.status === 401) {
+        router.push('/login');
+      } else {
+        alert(error.response?.data?.error || 'Failed to place order. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -356,7 +360,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-   
       <div className="max-w-[1400px] mx-auto p-4 flex gap-4">
         {/* Sidebar */}
         <div className="w-[200px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)] flex flex-col">
@@ -423,6 +426,14 @@ export default function Home() {
                     className="w-20 px-3 py-2 rounded-xl border border-gray-200"
                   />
                 </div>
+                {/* Add the "Show Restaurant Map" button here */}
+                <button 
+                  className="bg-yellow text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  onClick={() => setIsMapPopupVisible(true)}
+                >
+                  <MapPin className="h-4 w-4" /> {/* Optional: Add an icon */}
+                  Show Map
+                </button>
                 {isSearching && (
                   <div className="animate-spin h-4 w-4 border-2 border-yellow border-t-transparent rounded-full" />
                 )}
@@ -461,7 +472,6 @@ export default function Home() {
               width={300}
               height={300}
               alt="Banner"
-             
               className="rounded-full absolute right-6 top-1/2 -translate-y-1/2"
             />
           </div>
@@ -711,7 +721,7 @@ export default function Home() {
         {/* Right Sidebar */}
         <div className="w-[300px] bg-white rounded-2xl p-4 h-[calc(100vh-2rem)]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold">Your Balance</h2> < Career/>
+            <h2 className="font-semibold">Your Balance</h2> <Career />
             <Image
               src={DEFAULT_PROFILE}
               alt="Profile"
@@ -810,6 +820,35 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Map Popup */}
+      {isMapPopupVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              onClick={() => setIsMapPopupVisible(false)}
+            >
+              &times; {/* Close icon */}
+            </button>
+            {/* <RestaurantMap /> */}
+          </div>
+        </div>
+      )}
+       {isMapPopupVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              onClick={() => setIsMapPopupVisible(false)}
+            >
+              &times; {/* Close icon */}
+            </button>
+            {/* <RestaurantMap /> */}
+            <RestaurantMap/>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
