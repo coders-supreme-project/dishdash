@@ -11,6 +11,8 @@ import {jwtDecode} from "jwt-decode";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {NewOrder,DecodedToken} from "./types"
+import Swal from 'sweetalert2';
+
 
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
 
@@ -30,6 +32,7 @@ export default function FoodOrder() {
     restaurant: ''
   });
   const [error, setError] = useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
 
   const loadOrders = async () => {
     try {
@@ -100,7 +103,13 @@ export default function FoodOrder() {
       router.push(`/payment/${orderId}?clientSecret=${clientSecret}`);
     } catch (error: any) {
       console.error('Error processing payment:', error);
-      alert(error.message || 'Failed to process payment');
+      Swal.fire({
+        title: 'No Orders',
+        text: 'Failed to process payment',
+        icon: 'info',
+        confirmButtonColor: '#ffc107'
+      });
+    
     }
   };
 
@@ -149,11 +158,58 @@ export default function FoodOrder() {
     };
 
     setOrders(prev => [...prev, newOrderItem]);
-    setShowAddModal(false);
+    setShowAddModal(false)
     setNewOrder({ name: '', price: 0, restaurant: '' });
 
     // Trigger the display of categories in the Home component
     router.push('/?showCategories=true');
+  };
+
+  const handlePurchaseAllOrders = async () => {
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    
+    if (pendingOrders.length === 0) {
+      Swal.fire({
+        title: 'No Orders',
+        text: 'No pending orders to purchase',
+        icon: 'info',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    try {
+      // Show loading state
+      Swal.fire({
+        title: 'Processing Orders',
+        text: 'Please wait while we process your orders...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Purchase all pending orders
+      for (const order of pendingOrders) {
+        await handlePurchase(order.id);
+      }
+
+      // Show success message
+      Swal.fire({
+        title: 'Success!',
+        text: 'All orders purchased successfully!',
+        icon: 'success',
+        confirmButtonColor: '#ffc107'
+      });
+    } catch (error) {
+      console.error('Error purchasing orders:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to purchase some orders',
+        icon: 'error',
+        confirmButtonColor: '#ffc107'
+      });
+    }
   };
 
   const filteredOrders = orders.filter(order => {
@@ -209,6 +265,17 @@ export default function FoodOrder() {
           </button>
         </div>
 
+        {orders.some(order => order.status === 'pending') && (
+          <div className="mb-6">
+            <button 
+              className="w-full bg-yellow text-white py-3 rounded-xl hover:bg-yellow-600 transition-colors"
+              onClick={handlePurchaseAllOrders}
+            >
+              Purchase All Pending Orders
+            </button>
+          </div>
+        )}
+
         <div className="grid gap-6">
           {filteredOrders.map((order) => (
             
@@ -253,6 +320,7 @@ export default function FoodOrder() {
                             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
                             onClick={() => handleOrderQuantity(order.id, item.id, 'decrease')}
                           >
+                            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                             -
                           </button>
                           <span className="font-medium w-8 text-center">{item.quantity}</span>
@@ -285,14 +353,6 @@ export default function FoodOrder() {
                     >
                       <Trash2 className="h-4 w-4" /> Delete Order
                     </button>
-                    {order.status === 'pending' && (
-                      <button 
-                        className="px-6 py-2 rounded-xl bg-yellow text-white font-medium"
-                        onClick={() => handlePurchase(order.id)}
-                      >
-                        Purchase Now
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
