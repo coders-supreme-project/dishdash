@@ -8,6 +8,7 @@ import axios from "axios";
 const MenuItemForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const restId = localStorage.getItem("restaurant");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -52,8 +53,10 @@ useEffect(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("salem");
+    
     const submitFormData = new FormData();
-    if (!restaurantId) return;
+    if (!restId) return;
     try {
       let imageUrl = "";
       if (imageFile) {
@@ -70,7 +73,7 @@ useEffect(() => {
   
       // Convert FormData to JSON
       const payload = {
-        restaurantId: restaurantId,
+        restaurantId: restId,
         name: formData.name,
         description: formData.description,
         price: formData.price,

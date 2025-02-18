@@ -125,7 +125,7 @@ const Profile = () => {
                     type="text"
                     value={userData[key as keyof typeof userData]}
                     onChange={(e) => handleInputChange(key, e.target.value)}
-                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FC8A06]"
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FC8A06]" 
                   />
                 ) : (
                   <p className="text-gray-900">{userData[key as keyof typeof userData]}</p>

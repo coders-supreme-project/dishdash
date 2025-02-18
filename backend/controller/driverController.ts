@@ -176,7 +176,67 @@ export const fetchData = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+export const getDriverLocation = async (req: Request, res: Response): Promise<void> => {
+  const { driverId } = req.params;
 
+  try {
+    // Fetch the latest location for the driver
+    const location = await prisma.geoLocation.findFirst({
+      where: { driverId: parseInt(driverId) },
+      orderBy: { createdAt: 'desc' }, 
+    });
+
+    if (!location) {
+      res.status(404).json({ message: 'Location not found' });
+    }
+
+    res.status(200).json(location);
+  } catch (error) {
+    console.error('Error fetching driver location:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const updateDriverLocation = async (req: Request, res: Response): Promise<void> => {
+  const { driverId, latitude, longitude } = req.body;
+
+  if (!driverId || !latitude || !longitude) {
+     res.status(400).json({ message: 'driverId, latitude, and longitude are required' });
+  }
+
+  try {
+    // Check if a location entry already exists for the driver
+    const existingLocation = await prisma.geoLocation.findUnique({
+      where: { id: Number(driverId) },
+    });
+
+    let location;
+    if (existingLocation) {
+      // Update the existing location
+      location = await prisma.geoLocation.update({
+        where: { driverId: Number(driverId) },
+        data: {
+          latitude,
+          longitude,
+        },
+      });
+    } else {
+      // Create a new location entry if it doesn't exist
+      location = await prisma.geoLocation.create({
+        data: {
+          latitude,
+          longitude,
+          driverId: Number(driverId),
+        },
+      });
+    }
+
+    res.status(200).json(location);
+  } catch (error) {
+    console.error('Error updating driver location:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 export const updateDriver = async (req: Request, res: Response): Promise<void> => {
   try {
     
@@ -267,5 +327,41 @@ export const getDriverByUserId = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+export const getCustomerGeoLocationByOrderId = async (req: Request, res: Response) => {
+  const { orderId } = req.params;
 
-module.exports = { registerDriver, verifyDriver, fetchData, updateDriver, getDriverByUserId };
+  try {
+    // Step 1: Find the order by ID and get the customerId
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(orderId) },
+      select: { customerId: true }, // Only fetch the customerId
+    });
+
+    // Step 2: Check if the order exists
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Step 3: Find the latest GeoLocation for the customer
+    const geoLocation = await prisma.geoLocation.findFirst({
+      where: { customerId: order.customerId },
+      orderBy: { createdAt: "desc" }, // Get the most recent GeoLocation
+      select: { latitude: true, longitude: true }, // Only fetch latitude and longitude
+    });
+
+    // Step 4: Check if GeoLocation exists for the customer
+    if (!geoLocation) {
+      return res.status(404).json({ message: "No geoLocation found for this customer" });
+    }
+
+    // Step 5: Return the latitude and longitude
+    res.status(200).json({
+      latitude: geoLocation.latitude,
+      longitude: geoLocation.longitude,
+    });
+  } catch (error) {
+    console.error("Error fetching customer geoLocation:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+module.exports = { registerDriver, verifyDriver, fetchData, updateDriver, getDriverByUserId,getDriverLocation,updateDriverLocation,getCustomerGeoLocationByOrderId };
