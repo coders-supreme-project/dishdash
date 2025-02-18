@@ -8,6 +8,7 @@ import axios from "axios";
 const MenuItemForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const restId = localStorage.getItem("restaurant");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -54,11 +55,10 @@ const MenuItemForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!restaurantId) {
-      console.error("❌ No restaurant ID found, cannot add item.");
-      return;
-    }
-  
+    console.log("salem");
+    
+    const submitFormData = new FormData();
+    if (!restId) return;
     try {
       let imageUrl = "";
       if (imageFile) {
@@ -74,7 +74,7 @@ const MenuItemForm = () => {
       }
   
       const payload = {
-        restaurantId: restaurantId,
+        restaurantId: restId,
         name: formData.name,
         description: formData.description,
         price: formData.price,

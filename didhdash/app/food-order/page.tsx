@@ -10,21 +10,10 @@ import type { Order } from "../services/api";
 import {jwtDecode} from "jwt-decode";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
+import {NewOrder,DecodedToken} from "./types"
 
 const DEFAULT_FOOD_IMAGE = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=300&fit=crop";
 
-interface NewOrder {
-  name: string;
-  price: number;
-  restaurant: string;
-}
-
-interface DecodedToken {
-  id: number;
-  email: string;
-  role: string;
-}
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 

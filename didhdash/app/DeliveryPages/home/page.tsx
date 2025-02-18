@@ -67,7 +67,7 @@ export default function DeliveryPage() {
         
         <button 
           className="relative z-10 px-8 py-4 bg-[#FC8A06] text-white text-xl font-semibold rounded-full hover:bg-[#028643] transition-colors duration-300 shadow-lg"
-          onClick={() => router.push('/DeliveryPages/workspace')}
+          onClick={() => router.push('/DeliveryPages/map')}
         >
           Start Working
         </button>

@@ -3,16 +3,14 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
-
+import {MainContentProps} from "./types"
 // Dynamically import components
 const Profile = dynamic(() => import('../profile/page'));
 const HomePage = dynamic(() => import('../home/page'));
 const Settings = dynamic(() => import('../settings/page'));
 
 
-interface MainContentProps {
-  selectedMenuItem?: string;
-}
+
 
 const MainContent: React.FC<MainContentProps> = ({ selectedMenuItem }) => {
   const pathname = usePathname();

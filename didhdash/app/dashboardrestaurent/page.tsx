@@ -3,23 +3,9 @@ import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
+import { MenuItem, Category, Restaurant, User } from "./types";
 
-// ✅ Define TypeScript Interfaces
-interface MenuItem {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  isAvailable: boolean;
-  categoryId: number | null;
-}
-
-interface Category {
-  id: number;
-  name: string;
-}
-
+// Define TypeScript Interfaces
 
 
 export default function Home() {
@@ -29,23 +15,42 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [restaurant, setRestaurant] = useState<number | null>(null);
+  const userString = localStorage.getItem("user");
+  const user: User = userString ? JSON.parse(userString) : null;
 
-  
-  
-  useEffect(() => {
-    const storedId = localStorage.getItem("restaurantId");
-    if (storedId) {
-      console.log("✅ Restaurant ID from localStorage:", storedId);
-      setRestaurantId(Number(storedId));
-      fetchMenuItems(storedId);
-    }
-  }, []);
-  
+  // Fetch Restaurant by User ID
+  const fetchRestaurant = async () => {
+    const userString = localStorage.getItem("user");
+    if (!userString) return;
 
-  const fetchMenuItems = async (id: string) => {
+    const user: User = JSON.parse(userString);
+    if (!user.id) return;
+    
     try {
-      const response = await axios.get(`http://localhost:3000/api/restaurant-owner/menu/${id}`);
+      const response = await axios.get<Restaurant>(
+        `http://127.0.0.1:3000/api/restaurants/get/${user.id}`
+      );
+      console.log("Restaurant Data:", response.data);
+
+      setRestaurant(response.data.id);
+      localStorage.setItem("restaurant", JSON.stringify(response.data.id));
+
+    } catch (error) {
+      console.error("❌ Error fetching restaurant:", error);
+    }
+  };
+
+  // Fetch Menu Items
+  const fetchMenuItems = async () => {
+    const restId = localStorage.getItem("restaurant");
+    
+    if (!restaurant) return;
+    try {
+      console.log("id rest",restId)
+      const response = await axios.get<MenuItem[]>(
+        `http://localhost:3000/api/owner/menu/${restId}`
+      );
       setMenuItems(response.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);
@@ -54,46 +59,59 @@ export default function Home() {
     }
   };
 
-  // ✅ Fetch Categories
+  // Fetch Categories
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<Category[]>("http://localhost:3000/api/categories");
+      const response = await axios.get<Category[]>(
+        "http://localhost:3000/api/categories"
+      );
       setCategories(response.data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
   };
 
-  // ✅ Open Edit Modal
+  // Open Edit Modal
   const handleEditClick = (item: MenuItem) => {
     setEditingItem(item);
     setIsModalOpen(true);
   };
 
-  // ✅ Close Modal
+  // Close Modal
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
   };
 
-  // ✅ Handle Input Changes
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  // Handle Input Changes
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setEditingItem((prev) => prev ? { ...prev, [name]: value } : null);
+    setEditingItem((prev) => (prev ? { ...prev, [name]: value } : null));
   };
 
-  // ✅ Handle Toggle for isAvailable
+  // Handle Toggle for isAvailable
   const handleToggleAvailability = () => {
-    setEditingItem((prev) => prev ? { ...prev, isAvailable: !prev.isAvailable } : null);
+    setEditingItem((prev) =>
+      prev ? { ...prev, isAvailable: !prev.isAvailable } : null
+    );
   };
 
-  // ✅ Update Menu Item
+  // Update Menu Item
   const handleUpdate = async () => {
     if (!editingItem) return;
 
     try {
-      await axios.put(`http://localhost:3000/api/restaurant-owner/menu-item/${editingItem.id}`, editingItem);
-      setMenuItems((prevItems) => prevItems.map(item => item.id === editingItem.id ? editingItem : item));
+      await axios.put(
+        `http://localhost:3000/api/restaurant-owner/menu-item/${editingItem.id}`,
+        editingItem
+      );
+      setMenuItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === editingItem.id ? editingItem : item
+        )
+      );
       closeModal();
       alert("Item updated successfully!");
     } catch (error) {
@@ -102,31 +120,38 @@ export default function Home() {
     }
   };
 
-  // ✅ Delete Menu Item
+  // Delete Menu Item
   const handleDelete = async (itemId: number) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-  
+
     try {
-      await axios.delete(`http://localhost:3000/api/restaurant-owner/menu-item/${itemId}`);
-      setMenuItems((prevItems) => prevItems.filter(item => item.id !== itemId));
+      await axios.delete(
+        `http://localhost:3000/api/owner/menu-item/${itemId}`
+      );
+      setMenuItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       alert("Item deleted successfully!");
     } catch (error) {
       console.error("Error deleting item:", error);
       alert("Failed to delete item.");
     }
   };
-  const fetchRestaurantId = async (ownerId: number) => {
-    try {
-      const response = await axios.get(`http://localhost:3000/api/restaurants?ownerId=${ownerId}`);
-      console.log("API Response:", response.data);
+
+  // Fetch Data on Component Mount
+  useEffect(() => {
+    fetchRestaurant();
+    console.log("Restaurant Data:", restaurant);
+
+    fetchCategories();
+  }, []);
+
   
-      const restaurant = response.data.find((r: any) => r.restaurantOwnerId === ownerId);
-      return restaurant ? restaurant.id.toString() : null;
-    } catch (error) {
-      console.error("❌ Error fetching restaurant ID", error);
-      return null;
+
+  // Fetch Menu Items When Restaurant is Set
+  useEffect(() => {
+    if (restaurant) {
+      fetchMenuItems();
     }
-  };
+  }, [restaurant]);
   
 
   // Update the return statement with this professional design
@@ -172,8 +197,8 @@ return (
 
     {/* Main Content */}
     <div className="flex-1 p-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Good morning, Sarah 👋</h1>
+      <header className="mb-8">   
+     <h1 className="text-2xl font-bold text-gray-900 mb-2">Good morning, {user.customer.firstName} 👋</h1>
         <p className="text-gray-600">Here's what's happening with your store today</p>
       </header>
 

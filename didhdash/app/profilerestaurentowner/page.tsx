@@ -17,6 +17,9 @@ interface Restaurant {
 
 
 export default function ProfilePage() {
+  const user = localStorage.getItem("user");
+  
+  
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -24,29 +27,32 @@ export default function ProfilePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  
+  
+  const restId = localStorage.getItem("restaurant");
 
-  useEffect(() => {
-    const fetchRestaurantProfile = async () => {
-      const storedId = localStorage.getItem("restaurantId");
-      if (!storedId) {
-        console.error("❌ No restaurant ID found in localStorage.");
-        return;
-      }
-  
-      try {
-        const response = await axios.get(`http://localhost:3000/api/restaurent/${storedId}`);
-        setRestaurant(response.data);
-        setUpdatedRestaurant(response.data);
-      } catch (error) {
-        console.error("❌ Error fetching profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchRestaurantProfile();
-  }, []);
-  
+useEffect(() => {
+  if (restId) setRestaurantId(Number(restId));
+  fetchRestaurantProfile()
+
+}, []);
+  const fetchRestaurantProfile = async () => {
+    if (!restId) return;
+    
+    try {
+      
+
+      const response = await axios.get<Restaurant>(
+        `http://localhost:3000/api/restaurants/one/${restId}`
+      );
+      setRestaurant(response.data);
+      setUpdatedRestaurant(response.data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setImageFile(e.target.files[0]);
@@ -66,7 +72,7 @@ export default function ProfilePage() {
       if (imageFile) {
         const timestamp = Math.floor(Date.now() / 1000);
         const { data } = await axios.post(
-          "http://localhost:3000/api/restaurent/sign-cloudinary",
+          "http://localhost:3000/api/restaurants/sign-cloudinary",
           { timestamp }
         );
 
@@ -83,7 +89,7 @@ export default function ProfilePage() {
       }
 
       await axios.put(
-       `http://localhost:3000/api/restaurent/${restaurantId}`,
+       `http://localhost:3000/api/restaurants/${restaurantId}`,
         {
           ...updatedRestaurant,
           image,

@@ -2,14 +2,7 @@
 
 import React, { ReactNode } from "react";
 
-interface MetricCardProps {
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
-  trend?: { value: number; isPositive: boolean };
-}
+import {MetricCardProps} from "./types"
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, trend }) => {
   return (

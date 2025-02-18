@@ -6,9 +6,9 @@ import path from "path";
 import crypto from "crypto";
 
 cloudinary.config({
-  cloud_name: "drliudydx",
-  api_key: "516363278445275",
-  api_secret: "dj-hWW7JRK0AYtEqiIXUUcWKuK8",
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 
@@ -241,6 +241,28 @@ export const getRestaurantMenuByCategory = async (req: Request, res: Response) =
     res.status(500).json({ error: 'Failed to fetch restaurant menu' });
   }
 };
+export const getRestaurantsLocation = async (req: Request, res: Response) => {
+  try {
+    // Fetch restaurants with their geolocation data
+    const restaurants = await prisma.restaurant.findMany({
+      include: {
+        geoLocation: true, // Include the associated geolocation data
+      },
+    });
+
+    // Transform the data to include only necessary fields
+    const formattedRestaurants = restaurants.map((restaurant) => ({
+      id: restaurant.id,
+      name: restaurant.name,
+      address: restaurant.address,
+      latitude: restaurant.geoLocation?.[0]?.latitude,
+      longitude: restaurant.geoLocation?.[0]?.longitude,
+    }));
+
+    res.status(200).json(formattedRestaurants);
+  } catch (error) {
+    console.error('Error fetching restaurants:', error);
+    res.status(500).json({ message: 'Internal server error' });}}
 
 // Add this function to get the restaurant ID by owner ID
 export const getRestaurantIdByOwnerId = async (req: Request, res: Response) => {
@@ -258,5 +280,63 @@ export const getRestaurantIdByOwnerId = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch restaurant ID' });
+  }
+}
+export const createRestaurant1 = async (req: Request, res: Response) => {
+  const { name, image, address, cuisineType, contactNumber, openingH, closingH, restaurantOwnerId,restaurantRcId } = req.body;
+  try {
+    const formattedOpeningH = new Date(`1970-01-01T${openingH}:00.000Z`);
+    const formattedClosingH = new Date(`1970-01-01T${closingH}:00.000Z`);
+    const restaurant = await prisma.restaurant.create({
+      data: {
+        name,
+        image,
+        address,
+        cuisineType,
+        contactNumber,
+        openingH:formattedOpeningH,
+        closingH: formattedClosingH,
+        restaurantOwnerId,
+        restaurantRcId
+      },
+    });
+    res.status(201).json(restaurant);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create restaurant' });
+  }
+};
+export const getRestaurantByUserId = async (req: Request, res: Response): Promise<void> => {
+  const {userId} = req.params // Convert userId to number
+
+  try {
+
+    const restaurant = await prisma.restaurant.findFirst({
+      where: {
+        restaurantOwner: {
+          user: {
+            id: Number(userId),
+          },
+        },
+      },
+      include: {
+        restaurantOwner: {
+          include: {
+            user: true, // Include user details if needed
+          },
+        },
+        menuItems: true, // Include menu items if needed
+        geoLocation: true, // Include geo location if needed
+        media: true, // Include media if needed
+      },
+    });
+
+    if (!restaurant) {
+       res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    res.status(200).json(restaurant);
+  } catch (error) {
+    console.error("Error fetching restaurant:", error);
+    res.status(500).json({ error: "Failed to fetch restaurant" });
   }
 };
