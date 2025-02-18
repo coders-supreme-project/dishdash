@@ -6,9 +6,9 @@ import path from "path";
 import crypto from "crypto";
 
 cloudinary.config({
-  cloud_name: "drliudydx",
-  api_key: "516363278445275",
-  api_secret: "dj-hWW7JRK0AYtEqiIXUUcWKuK8",
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 
@@ -72,16 +72,15 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 
 // Get all restaurants
+// Update getAllRestaurants
 export const getAllRestaurants = async (req: Request, res: Response) => {
-  const { ownerId } = req.query; // Add ownerId filter
+  const { ownerId } = req.query;
 
   try {
     const restaurants = await prisma.restaurant.findMany({
       where: ownerId ? { restaurantOwnerId: Number(ownerId) } : undefined,
       include: {
-        menuItems: {
-          include: { category: true }
-        },
+        menuItems: true,
         geoLocation: true,
         media: true,
       },

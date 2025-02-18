@@ -50,6 +50,8 @@ app.use('/api/auth', googleRoutes);
 const prisma = new PrismaClient();
 
 // ✅ Middleware
+app.use(cors());
+app.use(express.json());
 // app.use(cookieParser()); // ✅ Needed for handling authentication tokens
 
 app.use('/api/owner',apiLimiter, restaurantOwnerRoutes);
@@ -64,9 +66,9 @@ app.use('/api/restaurants', restaurantRoutes);
 //   res.json(users);
 // });
 
-// app.listen(3000, () => {
-//   console.log('Backend server running on http://localhost:3000');
-// });
+// Socket.io connection
+
+
 // ✅ Test Database Connection
 const testDB = async () => {
   try {

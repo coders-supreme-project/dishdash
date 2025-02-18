@@ -17,6 +17,7 @@ const center = {
 const DriverLiveTracking = ({ orderId }: { orderId: number }) => {
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
+  //@ts-ignore
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [distance, setDistance] = useState<string | null>(null);
   const [duration, setDuration] = useState<string | null>(null);
@@ -87,20 +88,26 @@ const DriverLiveTracking = ({ orderId }: { orderId: number }) => {
 
   // Calculate route, distance, and duration when driver or customer location changes
   useEffect(() => {
+    //@ts-ignore
     if (driverLocation && customerLocation && isLoaded && window.google) {
+      //@ts-ignore
       const directionsService = new window.google.maps.DirectionsService();
 
       directionsService.route(
         {
           origin: driverLocation,
           destination: customerLocation,
+          //@ts-ignore
           travelMode: window.google.maps.TravelMode.DRIVING,
         },
+        //@ts-ignore
         (result, status) => {
+          //@ts-ignore
           if (status === window.google.maps.DirectionsStatus.OK && result) {
             setDirections(result);
             setDistance(result.routes[0].legs[0].distance?.text || null);
             setDuration(result.routes[0].legs[0].duration?.text || null);
+            //@ts-ignore
           } else if (status === window.google.maps.DirectionsStatus.ZERO_RESULTS) {
             console.error("No route found between the locations.");
             setDistance("N/A");

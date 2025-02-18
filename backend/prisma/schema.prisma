@@ -209,10 +209,11 @@ model Conversation {
 }
 
 model Message {
-  id             Int        @id @default(autoincrement())
-  conversationId Int
-  senderType     SenderType
+   id             Int        @id @default(autoincrement())
   content        String
+  senderId       Int        // Ensure this exists
+  senderType     SenderType
+  conversationId Int
   createdAt      DateTime   @default(now())
 
   // Relationships
@@ -230,6 +231,7 @@ enum Role {
 enum SenderType {
   customer
   driver
+  restaurantOwner
 }
 
 enum OrderStatus {

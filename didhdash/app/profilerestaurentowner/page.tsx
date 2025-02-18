@@ -18,7 +18,7 @@ interface Restaurant {
 
 export default function ProfilePage() {
   const user = localStorage.getItem("user");
-  console.log(user,);
+  
   
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,8 +31,6 @@ export default function ProfilePage() {
   
   const restId = localStorage.getItem("restaurant");
 
-  console.log("hello",restId);
-
 useEffect(() => {
   if (restId) setRestaurantId(Number(restId));
   fetchRestaurantProfile()
@@ -42,7 +40,7 @@ useEffect(() => {
     if (!restId) return;
     
     try {
-      console.log("hello",restId);
+      
 
       const response = await axios.get<Restaurant>(
         `http://localhost:3000/api/restaurants/one/${restId}`

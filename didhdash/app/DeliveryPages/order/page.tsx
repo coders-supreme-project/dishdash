@@ -3,61 +3,8 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '@/context/page';
 import DriverMap from "../map/DriverMap";
+import {MenuItem,OrderItem,Order,OrderResponse,AuthContextType} from "./types"
 
-interface MenuItem {
-  name: string;
-  price: string;
-}
-
-interface OrderItem {
-  id: number;
-  quantity: number;
-  priceAtTimeOfOrder: number;
-  menuItem: MenuItem;
-}
-
-interface Order {
-  id: number;
-  customerId: number;
-  restaurantId: number;
-  driverId: number;
-  totalAmount: number;
-  status: string;
-  deliveryAddress: string;
-  paymentStatus: string;
-  customer: {
-    user: {
-      email: string;
-      phoneNumber: string;
-    };
-  };
-  restaurant: {
-    name: string;
-    address: string;
-  };
-  orderItems: OrderItem[];
-}
-
-interface OrderResponse {
-  success: boolean;
-  data: {
-    totalOrders: number;
-    groupedOrders: {
-      pending: Order[];
-      prepared: Order[];
-      confirmed: Order[];
-      delivered: Order[];
-      cancelled: Order[];
-    };
-  };
-}
-
-interface AuthContextType {
-  user?: {
-    id: number;
-  };
-  token?: string;
-}
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState<OrderResponse['data']['groupedOrders']>({

@@ -921,6 +921,7 @@ export default function Home() {
             >
               {isSubmitting ? 'Processing...' : `Purchase All (${cart.length} items)`}
             </button>
+            
           </div>
         </div>
       </div>

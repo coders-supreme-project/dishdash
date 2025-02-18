@@ -6,7 +6,7 @@ import { PaymentForm } from '../../components/PaymentForm';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-console.log("ssssssssssssssssssssssssssssss",process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+
 
 if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
   throw new Error('Stripe publishable key is missing');

@@ -5,9 +5,9 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 cloudinary.config({
-  cloud_name: "drliudydx",
-  api_key: "516363278445275",
-  api_secret: "dj-hWW7JRK0AYtEqiIXUUcWKuK8",
+  cloud_name: process.env.CLOUDNAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 const prisma = new PrismaClient();

@@ -8,7 +8,10 @@ const nextConfig = {
       "loremflickr.com",
       "picsum.photos",
       "upload.wikimedia.org",
-      "res.cloudinary.com"  // ✅ Add this to allow Wikimedia images
+      "res.cloudinary.com",
+      "example.com", "picsum.photos", "unsplash.com",
+      'picsum.photos'
+       // ✅ Add this to allow Wikimedia images
     ],
   },
   i18n, // ✅ Ensure i18n is properly included

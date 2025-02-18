@@ -28,12 +28,15 @@ export function PaymentForm({ clientSecret, orderId, onPaymentSuccess }: Payment
       console.error('Payment Element load error:', error);
       setMessage('Failed to load payment form. Please refresh the page.');
     };
-
+    //@ts-ignore
     element.on('ready', handleReady);
+    //@ts-ignore
     element.on('loaderror', handleError);
 
     return () => {
+      //@ts-ignore
       element.off('ready', handleReady);
+      //@ts-ignore
       element.off('loaderror', handleError);
     };
   }, [elements]);

@@ -40,14 +40,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("user", JSON.stringify(user));
   
       if (user.role === "restaurantOwner") {
+        console.log("Fetching restaurant ID for owner:", user.id);
+  
         const restaurantId = await fetchRestaurantId(user.id);
+        
         if (restaurantId) {
+          console.log("✅ Restaurant ID found:", restaurantId);
           localStorage.setItem("restaurantId", restaurantId);
           router.push(`/dashboardrestaurent/${restaurantId}`);
         } else {
-          router.push("/create-restaurant");
+          console.error("❌ No restaurant found for this owner.");
         }
-      
       } else if (user.role === "customer") {
         router.push("/");
       } else if (user.role === "driver") {

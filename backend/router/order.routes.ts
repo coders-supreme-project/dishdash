@@ -15,7 +15,6 @@ router.post('/orders/confirm-payment', authenticateJWT, confirmPayment);
 router.get('/', authenticateJWT, getOrders);
 router.patch('/:orderId', authenticateJWT, updateOrderStatus);
 
-
 router.post('/payment-intent', authenticateJWT, createPaymentIntent);
 
 export default router;
