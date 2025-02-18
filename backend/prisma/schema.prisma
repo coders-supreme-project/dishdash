@@ -166,9 +166,9 @@ model GeoLocation {
   id           Int      @id @default(autoincrement())
   latitude     Float
   longitude    Float
-  customerId   Int?
+  customerId   Int?     @unique
   restaurantId Int?
-  driverId     Int?
+  driverId     Int?     @unique
   createdAt    DateTime @default(now()) // Automatically set when the record is created
   updatedAt    DateTime @updatedAt      // Automatically updated when the record is modified
 

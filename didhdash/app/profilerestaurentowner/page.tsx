@@ -45,7 +45,7 @@ useEffect(() => {
       console.log("hello",restId);
 
       const response = await axios.get<Restaurant>(
-        `http://localhost:3000/api/restaurent/${restId}`
+        `http://localhost:3000/api/restaurants/one/${restId}`
       );
       setRestaurant(response.data);
       setUpdatedRestaurant(response.data);
@@ -74,7 +74,7 @@ useEffect(() => {
       if (imageFile) {
         const timestamp = Math.floor(Date.now() / 1000);
         const { data } = await axios.post(
-          "http://localhost:3000/api/restaurent/sign-cloudinary",
+          "http://localhost:3000/api/restaurants/sign-cloudinary",
           { timestamp }
         );
 
@@ -91,7 +91,7 @@ useEffect(() => {
       }
 
       await axios.put(
-       `http://localhost:3000/api/restaurent/${restaurantId}`,
+       `http://localhost:3000/api/restaurants/${restaurantId}`,
         {
           ...updatedRestaurant,
           image,

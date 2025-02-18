@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '@/context/page';
+import DriverMap from "../map/DriverMap";
 
 interface MenuItem {
   name: string;
@@ -28,7 +29,7 @@ interface Order {
     user: {
       email: string;
       phoneNumber: string;
-    }
+    };
   };
   restaurant: {
     name: string;
@@ -48,7 +49,14 @@ interface OrderResponse {
       delivered: Order[];
       cancelled: Order[];
     };
-  }
+  };
+}
+
+interface AuthContextType {
+  user?: {
+    id: number;
+  };
+  token?: string;
 }
 
 const OrdersPage = () => {
@@ -61,12 +69,13 @@ const OrdersPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [driverId, setDriverId] = useState<number | null>(null);
-  const auth = useContext(AuthContext);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const auth = useContext(AuthContext) as AuthContextType; // Cast AuthContext to the correct type
 
   useEffect(() => {
     const fetchDriverId = async () => {
       const userId = auth?.user?.id;
-      console.log("userId",userId);
+      console.log("userId", userId);
       if (!userId) return;
 
       try {
@@ -90,7 +99,7 @@ const OrdersPage = () => {
       if (!driverId || !auth?.token) return;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/order/${driverId}`, {
+        const response = await fetch(`http://localhost:3000/api/orders/${driverId}`, {
           headers: {
             'Authorization': `Bearer ${auth.token}`
           }
@@ -108,6 +117,10 @@ const OrdersPage = () => {
       fetchOrders();
     }
   }, [driverId, auth?.token]);
+
+  const handleAcceptOrder = (orderId: number) => {
+    setSelectedOrderId(orderId);
+  };
 
   if (loading) {
     return (
@@ -131,7 +144,11 @@ const OrdersPage = () => {
                   {orderList.length}
                 </span>
               </div>
-              
+
+              {selectedOrderId && (
+                <DriverMap orderId={selectedOrderId} />
+              )}
+
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {orderList.map((order) => (
                   <div key={order.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -199,7 +216,7 @@ const OrdersPage = () => {
                       {order.status === 'prepared' && (
                         <button 
                           className="mt-6 w-full bg-[#FC8A06] text-white py-3 rounded-lg hover:bg-[#028643] transition-colors duration-300 flex items-center justify-center font-medium"
-                          onClick={() => {/* Add accept order logic */}}
+                          onClick={() => handleAcceptOrder(order.id)}
                         >
                           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />

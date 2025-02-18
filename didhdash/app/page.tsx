@@ -13,7 +13,7 @@ import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
 import Career from "./career/page";
 import RestaurantMap from "../components/RestaurantMap";
-import DriverLocation from "../components/DriverLocation"
+import DriverLocation from "./DeliveryPages/map/DriverMap"
 
 const orderMenu = [
   { name: "Margherita Pizza", icon: "🍕", price: 12.99 },
@@ -293,13 +293,15 @@ export default function Home() {
 
       const orderData = {
         items: cart.map(item => ({
-          id: item.id,
+          menuItemId: item.id,
           quantity: item.quantity,
           price: item.price
         })),
         totalAmount,
-        customerId: userId,
-        restaurantId
+        restaurant: restaurantId,
+        status: 'pending',
+        paymentStatus: 'unpaid',
+        deliveryAddress: '123 Main St' // Replace with actual delivery address
       };
 
       const response = await createOrder(orderData);
@@ -843,7 +845,7 @@ export default function Home() {
               &times; {/* Close icon */}
             </button>
             {/* <RestaurantMap /> */}
-            <DriverLocation driverId={1} /> sasa
+            <RestaurantMap/>
           </div>
         </div>
       )}

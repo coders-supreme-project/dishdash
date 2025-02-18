@@ -18,8 +18,11 @@ const router = Router();
 //@ts-ignore
 router.post("/sign-cloudinary", signCloudinary);
 router.get('/search', searchRestaurants);
+router.get('/location', getRestaurantsLocation);
+router.get('/get/:userId', getRestaurantByUserId);
 router.get('/', getAllRestaurants);
 router.post('/create', createRestaurant);
+router.post('/creat', createRestaurant1);
 router.get('/one/:id', getRestaurantById);
 router.put('/:id', updateRestaurant);
 router.delete('/:id', deleteRestaurant);

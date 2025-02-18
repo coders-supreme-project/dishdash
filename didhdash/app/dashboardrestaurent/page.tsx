@@ -61,6 +61,8 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [restaurant, setRestaurant] = useState<number | null>(null);
+  const userString = localStorage.getItem("user");
+  const user: User = userString ? JSON.parse(userString) : null;
 
   // Fetch Restaurant by User ID
   const fetchRestaurant = async () => {
@@ -69,12 +71,13 @@ export default function Home() {
 
     const user: User = JSON.parse(userString);
     if (!user.id) return;
-
+    console.log(user,"userrrr");
+    
     try {
       const response = await axios.get<Restaurant>(
-        `http://127.0.0.1:3000/api/restaurent/get/${user.id}`
+        `http://127.0.0.1:3000/api/restaurants/get/${user.id}`
       );
-      // console.log("Restaurant Data:", response.data);
+      console.log("Restaurant Data:", response.data);
 
       setRestaurant(response.data.id);
       localStorage.setItem("restaurant", JSON.stringify(response.data.id));
@@ -87,12 +90,12 @@ export default function Home() {
   // Fetch Menu Items
   const fetchMenuItems = async () => {
     const restId = localStorage.getItem("restaurant");
-
+    
     if (!restaurant) return;
     try {
       console.log("id rest",restId)
       const response = await axios.get<MenuItem[]>(
-        `http://localhost:3000/api/restaurant-owner/menu/${restId}`
+        `http://localhost:3000/api/owner/menu/${restId}`
       );
       setMenuItems(response.data);
     } catch (error) {
@@ -169,7 +172,7 @@ export default function Home() {
 
     try {
       await axios.delete(
-        `http://localhost:3000/api/restaurant-owner/menu-item/${itemId}`
+        `http://localhost:3000/api/owner/menu-item/${itemId}`
       );
       setMenuItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       alert("Item deleted successfully!");
@@ -241,7 +244,7 @@ return (
     {/* Main Content */}
     <div className="flex-1 p-8">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Good morning, Sarah 👋</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Good morning, {user.customer.firstName} 👋</h1>
         <p className="text-gray-600">Here's what's happening with your store today</p>
       </header>
 
