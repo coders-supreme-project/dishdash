@@ -161,7 +161,7 @@
       success: boolean;
       order: Order;
       clientSecret: string;
-    }>('/orders/create', orderData, {
+    }>('/orders', orderData, {
       headers: {
         Authorization: `Bearer ${token}`
       }

@@ -16,7 +16,7 @@ import Career from "./career/page";
 import { ItemDetailsModal } from './components/ItemDetailsModal';
 
 
-import Career from "./career/page";
+
 import RestaurantMap from "../components/RestaurantMap";
 import DriverLocation from "./DeliveryPages/map/DriverMap"
 
