@@ -161,7 +161,7 @@
       success: boolean;
       order: Order;
       clientSecret: string;
-    }>('/orders/create', orderData, {
+    }>('/orders', orderData, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -278,4 +278,17 @@
       }
     );
     return response.data;
+  };
+
+  export const deleteOrder = async (orderId: number) => {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    await api.delete(`/orders/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   };

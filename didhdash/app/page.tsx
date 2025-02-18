@@ -11,7 +11,12 @@ import { AuthContext } from '../context/page'; // Add this line to import AuthCo
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
 import { MenuItem, Order, OrderStatus } from './services/api';
+import Swal from 'sweetalert2';
 import Career from "./career/page";
+import { ItemDetailsModal } from './components/ItemDetailsModal';
+
+
+
 import RestaurantMap from "../components/RestaurantMap";
 import DriverLocation from "./DeliveryPages/map/DriverMap"
 
@@ -76,6 +81,12 @@ export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<MenuItem | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<MenuItem[]>([]);
+  const [totalOrderAmount, setTotalOrderAmount] = useState(0);
   const [isMapPopupVisible, setIsMapPopupVisible] = useState(false); // State for map popup visibility
 
   const authContext = useContext(AuthContext);
@@ -198,6 +209,15 @@ export default function Home() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, priceRange.min, priceRange.max]);
 
+  const handleItemClick = (item: MenuItem) => {
+    setSelectedItem({
+      ...item,
+      price: Number(item.price)
+    });
+    setSelectedItemForPurchase(item);
+    setShowItemModal(true);
+  };
+
   // Add function to handle adding items to cart
   const handleAddToCart = (item: MenuItem, type: 'menuItem' | 'restaurant') => {
     const newItem: CartItem = {
@@ -212,9 +232,19 @@ export default function Home() {
     setCart(prevCart => {
       // Check if adding item from different restaurant
       if (prevCart.length > 0 && prevCart[0].restaurantId !== newItem.restaurantId) {
-        if (confirm('Adding items from a different restaurant will clear your current cart. Continue?')) {
-          return [newItem];
-        }
+        Swal.fire({
+          title: 'Different Restaurant',
+          text: 'Adding items from a different restaurant will clear your current cart. Continue?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ffc107',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, clear cart'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setCart([newItem]);
+          }
+        });
         return prevCart;
       }
 
@@ -309,7 +339,13 @@ export default function Home() {
       // Check if response exists and has success property
       if (response && response.success) {
         setCart([]);
-        alert('Order placed successfully!');
+          Swal.fire({
+                      title: 'Success!',
+                      text: 'Order placed successfully!',
+                      icon: 'success',
+                      confirmButtonColor: '#ffc107'
+                    });
+        // alert('Order placed successfully!');
         router.push('/food-order');
       } else {
         alert('Failed to create order. Please try again.');
@@ -351,6 +387,59 @@ export default function Home() {
     }
   };
 
+  // Add this function to handle bulk purchase
+  const handleBulkPurchase = () => {
+    if (selectedOrders.length === 0) {
+      alert('Please select items to purchase');
+      return;
+    }
+    
+    selectedOrders.forEach(item => {
+      handleAddToCart(item, 'menuItem');
+    });
+    
+    setSelectedOrders([]);
+    setShowItemModal(false);
+  };
+
+  // Add this function to handle all orders purchase
+  const handlePurchaseAll = () => {
+    if (cart.length === 0) {
+      Swal.fire({
+        title: 'Empty Cart',
+        text: 'Your cart is empty!',
+        icon: 'warning',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Processing Purchase',
+      text: 'Please wait while we process your order...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    handleCheckout().then(() => {
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your order has been placed successfully!',
+        icon: 'success',
+        confirmButtonColor: '#ffc107'
+      });
+    }).catch((error) => {
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'Failed to process your order',
+        icon: 'error',
+        confirmButtonColor: '#ffc107'
+      });
+    });
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -368,6 +457,30 @@ export default function Home() {
             <span className="text-yellow">Meal</span>
             <span>.</span>
           </div>
+          <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Menu</h1>
+      <div className="grid grid-cols-3 gap-4">
+        {menuItems.map((item) => (
+          <div key={item.id} className="cursor-pointer p-4 bg-white shadow rounded" onClick={() => handleItemClick(item)}>
+            <Image src={item.imageUrl || '/default-food-image.jpg'} alt={item.name} width={150} height={150} className="mb-2" />
+            <h2 className="text-lg font-semibold">{item.name}</h2>
+            <p className="text-yellow-600">${item.price.toFixed(2)}</p>
+          </div>
+        ))}
+      </div>
+
+      {showItemModal && selectedItem && (
+        <ItemDetailsModal
+          isOpen={showItemModal}
+          onClose={() => setShowItemModal(false)}
+          item={selectedItem}
+          onAddToCart={(ingredients) => {
+            handleAddToCart(selectedItem, 'menuItem');
+            setShowItemModal(false);
+          }}
+        />
+      )}
+    </div>
           
           <nav className="nav-menu">
             {navItems.map((item) => (
@@ -395,7 +508,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold">Hello, Patricia</h1>
+              <h1 className="text-2xl font-semibold"></h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-4">
@@ -524,7 +637,11 @@ export default function Home() {
                 menuItems.length > 0 ? (
                   <div className="grid grid-cols-4 gap-6">
                     {menuItems.map((item) => (
-                      <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                      <div 
+                        key={item.id} 
+                        className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer"
+                        onClick={() => handleItemClick(item)}
+                      >
                         <div className="relative h-48">
                           <Image
                             src={item.imageUrl || DEFAULT_FOOD_IMAGE}
@@ -542,12 +659,6 @@ export default function Home() {
                             <div className="font-medium text-yellow">
                               ${Number(item.price).toFixed(2)}
                             </div>
-                            <button 
-                              className="add-btn"
-                              onClick={() => handleAddToCart(item, 'menuItem')}
-                            >
-                              +
-                            </button>
                           </div>
                           {item.restaurant && (
                             <div className="text-sm text-gray-500 mt-2">
@@ -572,56 +683,55 @@ export default function Home() {
             <div>
               {/* Popular Restaurants */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Popular Restaurants</h2>
-                  <button 
-                    className="text-yellow flex items-center gap-1"
-                    onClick={() => setViewAllRestaurants(!viewAllRestaurants)}
-                  >
-                    {viewAllRestaurants ? 'Show Less' : 'View all'} <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className={`grid ${viewAllRestaurants ? 'grid-cols-4' : 'grid-cols-3'} gap-6`}>
-                  {displayedRestaurants.map((restaurant) => (
-                    <div 
-                      key={restaurant.id} 
-                      className="dish-card cursor-pointer"
-                      onClick={() => handleRestaurantClick(restaurant.id)}
-                    >
-                      <div className="relative">
-                        <Image
-                          src={restaurant.image || DEFAULT_FOOD_IMAGE}
-                          alt={restaurant.name}
-                          width={500}
-                          height={300}
-                          className="w-full h-[200px] object-cover"
-                        />
-                        {restaurant.discount && (
-                          <div className="dish-discount">
-                            {restaurant.discount}
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold">{restaurant.name}</h3>
-                          <div className="dish-price">
-                            ${restaurant.menuItems?.[0]?.price || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex text-yellow-400">
-                            {"★".repeat(5)}
-                          </div>
-                          <button className="add-btn">
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-semibold">Popular Restaurants</h2>
+    <button 
+      className="text-yellow flex items-center gap-1"
+      onClick={() => setViewAllRestaurants(!viewAllRestaurants)}
+    >
+      {viewAllRestaurants ? 'Show Less' : 'View all'} <ChevronRight className="h-4 w-4" />
+    </button>
+  </div>
+  <div className={`grid ${viewAllRestaurants ? 'grid-cols-4' : 'grid-cols-3'} gap-6`}>
+    {displayedRestaurants.map((restaurant) => (
+      <div 
+        key={restaurant.id} 
+        className="dish-card cursor-pointer"
+        onClick={() => handleRestaurantClick(restaurant.id)}
+      >
+        <div className="relative">
+          <Image
+            src={restaurant.image || DEFAULT_FOOD_IMAGE}
+            alt={restaurant.name}
+            width={500}
+            height={300}
+            className="w-full h-[200px] object-cover"
+          />
+          {restaurant.discount && (
+            <div className="dish-discount">
+              {restaurant.discount}
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold">{restaurant.name}</h3>
+            {/* Remove the price display */}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex text-yellow-400">
+              {"★".repeat(5)}
+            </div>
+            {/* Replace the "+" button with "See Menu" */}
+            <button className="text-yellow">
+              See Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
               {/* Recent Orders */}
               <div>
@@ -683,7 +793,11 @@ export default function Home() {
                       <h3 className="text-lg font-semibold mb-4">{category.categoryName}</h3>
                       <div className="grid grid-cols-3 gap-6">
                         {category.items.map((item: any) => (
-                          <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                          <div 
+                            key={item.id} 
+                            className="bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer"
+                            onClick={() => handleItemClick(item)}
+                          >
                             <div className="relative h-48">
                               <Image
                                 src={item.imageUrl || DEFAULT_FOOD_IMAGE}
@@ -698,13 +812,9 @@ export default function Home() {
                                 <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="font-medium text-yellow">${Number(item.price).toFixed(2)}</div>
-                                <button 
-                                  className="add-btn"
-                                  onClick={() => handleAddToCart(item, 'menuItem')}
-                                >
-                                  +
-                                </button>
+                                <div className="font-medium text-yellow">
+                                  ${Number(item.price).toFixed(2)}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -802,20 +912,14 @@ export default function Home() {
               </div>
             </div>
 
-            <button className="coupon-btn mb-4">
-              <div className="flex items-center gap-2">
-                <div className="coupon-icon">%</div>
-                <div>Have a coupon code?</div>
-              </div>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-
             <button 
-              className={`checkout-btn ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={handleCheckout}
+              className={`w-full bg-yellow text-white py-3 rounded-xl hover:bg-yellow-600 transition-colors ${
+                isSubmitting || cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handlePurchaseAll}
               disabled={cart.length === 0 || isSubmitting}
             >
-              {isSubmitting ? 'Processing...' : 'Checkout'}
+              {isSubmitting ? 'Processing...' : `Purchase All (${cart.length} items)`}
             </button>
           </div>
         </div>

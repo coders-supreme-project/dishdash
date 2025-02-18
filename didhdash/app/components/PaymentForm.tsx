@@ -2,6 +2,7 @@
 
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 interface PaymentFormProps {
   clientSecret: string;
@@ -67,8 +68,14 @@ export function PaymentForm({ clientSecret, orderId, onPaymentSuccess }: Payment
         setMessage(error.message || 'Payment failed');
         throw error;
       }
-
-      alert('Payment successful!');
+       
+       Swal.fire({
+              title: 'Success!',
+              text: 'Payment successful!',
+              icon: 'success',
+              confirmButtonColor: '#ffc107'
+            });
+      // alert('Payment successful!');
       await onPaymentSuccess();
     } catch (error) {
       console.error('Payment failed:', error);
